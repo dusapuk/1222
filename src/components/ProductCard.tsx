@@ -1,0 +1,124 @@
+import { ShoppingCart, Heart, Eye, Percent, Sparkles, Flame, AlertCircle } from 'lucide-react'
+import type { Service } from '../lib/data'
+import { getDiscountPct } from '../lib/data'
+import { formatToman } from '../lib/format'
+
+const FALLBACK = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%231a1b26"/><circle cx="32" cy="26" r="9" fill="%23505162"/><path d="M14 56c0-9.94 8.06-18 18-18s18 8.06 18 18" fill="%23505162"/></svg>'
+
+export type ProductCardProps = {
+  service: Service
+  onClick?: (s: Service) => void
+  variant?: 'default' | 'compact'
+}
+
+export function ProductCard({ service: s, onClick, variant = 'default' }: ProductCardProps) {
+  const discount = getDiscountPct(s)
+  const compact = variant === 'compact'
+
+  return (
+    <div
+      onClick={() => onClick?.(s)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') onClick?.(s)
+      }}
+      className="group bg-[#13141a] border border-[#1e1f2a] rounded-2xl overflow-hidden hover:border-[#d4a853]/40 transition-all cursor-pointer flex flex-col focus:outline-none focus:ring-2 focus:ring-[#d4a853]/50"
+    >
+      <div className={`relative overflow-hidden ${compact ? 'aspect-[5/3]' : 'aspect-square'} bg-gradient-to-br from-[#1a1b26] to-[#0e0f15] flex items-center justify-center p-6`}>
+        <img
+          src={s.logoUrl ?? FALLBACK}
+          alt={s.titleFa}
+          loading="lazy"
+          className="max-w-[70%] max-h-[70%] object-contain group-hover:scale-110 transition-transform duration-500"
+          onError={(e) => {
+            ;(e.currentTarget as HTMLImageElement).src = FALLBACK
+          }}
+        />
+
+        <div className="absolute top-3 right-3 flex flex-col gap-1.5">
+          {discount > 0 && (
+            <span className="bg-[#e63946] text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-lg">
+              <Percent size={10} />
+              {discount}٪
+            </span>
+          )}
+          {s.isPopular && (
+            <span className="bg-[#d4a853] text-[#0b0c10] text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-lg">
+              <Flame size={10} />
+              پرفروش
+            </span>
+          )}
+          {s.isAi && (
+            <span className="bg-[#9b5de5] text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-lg">
+              <Sparkles size={10} />
+              AI
+            </span>
+          )}
+        </div>
+
+        {!s.inStock && (
+          <div className="absolute inset-0 bg-[#0b0c10]/70 backdrop-blur-[2px] flex items-center justify-center">
+            <span className="bg-[#1e1f2a] text-[#e63946] text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+              <AlertCircle size={12} />
+              ناموجود
+            </span>
+          </div>
+        )}
+
+        <div className="absolute bottom-3 left-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            type="button"
+            onClick={(e) => e.stopPropagation()}
+            className="w-8 h-8 bg-[#0b0c10]/80 backdrop-blur-sm rounded-lg flex items-center justify-center text-[#8a8b96] hover:text-[#e63946] transition-colors"
+            aria-label="افزودن به علاقه‌مندی"
+          >
+            <Heart size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => e.stopPropagation()}
+            className="w-8 h-8 bg-[#0b0c10]/80 backdrop-blur-sm rounded-lg flex items-center justify-center text-[#8a8b96] hover:text-white transition-colors"
+            aria-label="نمایش سریع"
+          >
+            <Eye size={14} />
+          </button>
+        </div>
+      </div>
+
+      <div className="p-4 flex flex-col flex-1">
+        <h4 className="font-bold text-sm text-white mb-1 line-clamp-1 group-hover:text-[#d4a853] transition-colors">
+          {s.titleFa}
+        </h4>
+        <p className="text-[11px] text-[#6b6c78] mb-3 line-clamp-2 leading-5 min-h-[2.5rem]">
+          {s.shortDescriptionFa ?? s.titleEn ?? ''}
+        </p>
+
+        <div className="mt-auto flex items-end justify-between gap-2">
+          <div className="min-w-0">
+            {s.compareAtIrt && discount > 0 && (
+              <span className="text-[11px] text-[#505162] line-through block leading-tight">
+                {formatToman(s.compareAtIrt)}
+              </span>
+            )}
+            <span className="font-black text-[15px] text-white leading-tight whitespace-nowrap">
+              از {formatToman(s.fromPriceIrt)}
+            </span>
+            <span className="text-[10px] text-[#6b6c78] mr-1">تومان</span>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onClick?.(s)
+            }}
+            className="bg-[#1e1f2a] hover:bg-[#d4a853] text-[#8a8b96] hover:text-[#0b0c10] w-9 h-9 rounded-xl flex items-center justify-center transition-all shrink-0"
+            aria-label="افزودن به سبد"
+          >
+            <ShoppingCart size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
