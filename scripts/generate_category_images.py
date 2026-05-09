@@ -18,77 +18,87 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "public" / "images" / "categories"
 OUT.mkdir(parents=True, exist_ok=True)
 
-# (slug, prompt, color-anchor for cohesion in editor's mind)
+# Editorial / professional product-photography style. Muted palettes,
+# low-key lighting, shallow depth of field, no AI-paint-splash look.
+# A common style modifier is appended to every prompt to keep cohesion.
+BASE_STYLE = (
+    "editorial product photography, premium magazine cover, muted color grading, "
+    "low-key cinematic lighting, shallow depth of field, photorealistic, "
+    "minimalist composition, fine grain, soft shadows, dark moody background, "
+    "no people, no faces, no text, no letters, no logos, no watermark"
+)
+
+# (slug, subject prompt — style modifier is appended automatically)
 CATEGORIES: list[tuple[str, str]] = [
     (
         "ai-assistants",
-        "futuristic AI chatbot interface, glowing neural network, holographic conversation bubbles, "
-        "deep navy and electric purple, cinematic 3d render, no text, no letters",
+        "abstract glass orb resting on matte dark stone, faint indigo and slate light, "
+        "subtle wireframe reflections, restrained sci-fi still life",
     ),
     (
         "ai-image",
-        "artistic AI image generation, vibrant abstract painting bursting from a canvas, "
-        "fluid magenta orange teal pigment, dramatic lighting, premium 3d render, no text, no letters",
+        "single dry brush trailing burgundy pigment across textured cotton paper, "
+        "restrained crimson and warm ivory tones, top-down studio shot",
     ),
     (
         "ai-video",
-        "AI video creation studio, ribbons of cinematic film unrolling, neon motion blur, "
-        "rich red and blue spotlight, dark scene, premium 3d render, no text, no letters",
+        "vintage 35mm film reel and prime lens on charcoal table, deep amber tungsten key light, "
+        "soft red accent, archival cinematography mood",
     ),
     (
         "ai-voice-music",
-        "AI voice and music synthesis, glowing waveform ribbons around a sleek microphone, "
-        "deep teal and electric green, cinematic studio lighting, premium 3d render, no text, no letters",
+        "studio condenser microphone on a dark stand, faint teal rim light, "
+        "atmospheric haze, recording booth at night",
     ),
     (
         "ai-writing-seo",
-        "AI writing assistant, futuristic glowing keyboard with floating golden words, "
-        "warm amber and indigo lighting, premium 3d render, no text, no letters",
+        "open leather notebook and brass fountain pen on dark walnut desk, single warm desk lamp, "
+        "subtle golden glow, editorial flat lay",
     ),
     (
         "developer-tools",
-        "developer workspace, glowing terminal screens with abstract code lines, "
-        "deep blue and emerald, neon highlights, cinematic 3d render, no text, no letters",
+        "single dark monitor with faint abstract code reflections, mechanical keyboard, "
+        "minimalist desk, ambient deep blue light, late-night office",
     ),
     (
         "design-creative",
-        "graphic design studio, splashes of paint, color palette and creative tools, "
-        "vivid pink yellow purple, premium 3d render, no text, no letters",
+        "calm studio still life of paper color swatches, drafting tools and sketchbook, "
+        "muted dusty pink and bone white, soft daylight, top-down composition",
     ),
     (
         "productivity-work",
-        "modern productivity desk, sleek laptop with glowing icons floating around, "
-        "warm caramel and steel blue, soft cinematic light, premium 3d render, no text, no letters",
+        "clean modern desk with slim laptop slightly open, ceramic mug and a small plant, "
+        "muted steel blue and warm oak, gentle morning side light",
     ),
     (
         "streaming",
-        "cinematic streaming entertainment, theatre seats with red velvet, neon film reel and popcorn, "
-        "warm crimson and gold, premium 3d render, no text, no letters",
+        "empty cinema auditorium with deep red velvet seats, single soft spotlight on a row, "
+        "low-key warm crimson and amber, anamorphic still",
     ),
     (
         "music",
-        "music streaming, glowing vinyl record floating above headphones, "
-        "vibrant violet and cyan, neon studio lighting, premium 3d render, no text, no letters",
+        "matte black vinyl record on a turntable platter with leather headphones beside it, "
+        "low ambient violet and bronze light, atmospheric studio mood",
     ),
     (
         "education",
-        "online education concept, stack of glowing books with a holographic lightbulb, "
-        "warm gold and royal blue, premium 3d render, no text, no letters",
+        "stack of weathered hardcover books with a brass reading lamp casting warm gold pool, "
+        "dark academia desk, subtle indigo shadows",
     ),
     (
         "cloud-storage",
-        "cloud computing, luminous floating clouds with abstract data streams and servers, "
-        "icy cyan and deep indigo, premium 3d render, no text, no letters",
+        "minimalist server-room corridor at night, geometric blue led strips, gentle cyan haze, "
+        "long perspective, architectural photography",
     ),
     (
         "social-communication",
-        "social network communication, glowing nodes connected with light beams, "
-        "vivid pink and electric blue, cinematic 3d render, no text, no letters",
+        "long-exposure light trails forming a soft network of intersecting lines on dark glass, "
+        "restrained dusk pink and steel blue, abstract studio shot",
     ),
     (
         "business-marketing",
-        "business marketing analytics, ascending neon graph bars and a sleek briefcase, "
-        "rich emerald and gold, premium 3d render, no text, no letters",
+        "minimalist desk flat lay with leather briefcase, paper bar chart and a fountain pen, "
+        "deep emerald and warm cream tones, soft directional light",
     ),
 ]
 
@@ -119,14 +129,17 @@ def download(url: str, dest: Path) -> int:
 
 
 def main() -> int:
-    seed_base = 4242
+    # Bumped from 4242 to avoid pollinations seed-cache collision with the
+    # previous (more-saturated) prompts.
+    seed_base = 8821
     failures: list[str] = []
-    for i, (slug, prompt) in enumerate(CATEGORIES):
+    for i, (slug, subject) in enumerate(CATEGORIES):
         dest = OUT / f"{slug}.jpg"
         if dest.exists() and dest.stat().st_size > 5_000:
             print(f"[skip] {slug}.jpg already exists ({dest.stat().st_size} bytes)")
             continue
         seed = seed_base + i * 17
+        prompt = f"{subject}, {BASE_STYLE}"
         url = url_for(prompt, seed)
         print(f"[{i + 1:>2}/{len(CATEGORIES)}] {slug:24} seed={seed}")
         for attempt in range(1, 4):
