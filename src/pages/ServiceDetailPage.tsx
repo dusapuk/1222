@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   ShoppingCart,
   Heart,
@@ -11,12 +11,18 @@ import {
   Percent,
   CheckCircle2,
   AlertCircle,
+  Calendar,
+  Coins,
+  Globe,
 } from 'lucide-react'
 import {
   getServiceBySlug,
   getCategoryById,
   getServicesByCategory,
   getDiscountPct,
+  getPlansByService,
+  getPlanDiscountPct,
+  type Plan,
   type Service,
 } from '../lib/data'
 import { ProductCard } from '../components/ProductCard'
@@ -34,6 +40,22 @@ export type ServiceDetailPageProps = {
 export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) {
   const service = getServiceBySlug(slug)
   const category = service ? getCategoryById(service.categoryId) : undefined
+
+  const servicePlans: Plan[] = useMemo(
+    () => (service ? getPlansByService(service.id) : []),
+    [service],
+  )
+  const cheapestPlan: Plan | null = useMemo(() => {
+    if (!servicePlans.length) return null
+    return [...servicePlans]
+      .filter((p) => p.priceIrt != null)
+      .sort((a, b) => (a.priceIrt ?? 0) - (b.priceIrt ?? 0))[0] ?? null
+  }, [servicePlans])
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(
+    cheapestPlan?.id ?? servicePlans[0]?.id ?? null,
+  )
+  const selectedPlan: Plan | null =
+    servicePlans.find((p) => p.id === selectedPlanId) ?? cheapestPlan
 
   const related: Service[] = useMemo(() => {
     if (!service) return []
@@ -76,15 +98,16 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
         {/* main info */}
         <div className="lg:col-span-7">
           <div className="bg-[#13141a] border border-[#1e1f2a] rounded-2xl overflow-hidden">
-            <div className="aspect-[5/3] bg-gradient-to-br from-[#1a1b26] to-[#0e0f15] flex items-center justify-center p-12">
+            <div className="relative aspect-[5/3] bg-gradient-to-br from-[#1a1b26] to-[#0e0f15] overflow-hidden">
               <img
                 src={service.logoUrl ?? FALLBACK}
                 alt={service.titleFa}
-                className="max-w-[55%] max-h-[55%] object-contain"
+                className="absolute inset-0 w-full h-full object-cover"
                 onError={(e) => {
                   ;(e.currentTarget as HTMLImageElement).src = FALLBACK
                 }}
               />
+              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0b0c10]/80 to-transparent pointer-events-none" />
             </div>
           </div>
 
@@ -198,22 +221,43 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
             </div>
 
             <div className="bg-[#0e0f15] border border-[#1e1f2a] rounded-xl p-4 mb-4">
-              {service.compareAtIrt && discount > 0 && (
-                <span className="text-[11px] text-[#505162] line-through block mb-1">
-                  {formatToman(service.compareAtIrt)} تومان
-                </span>
-              )}
-              <div className="flex items-baseline gap-2">
-                <span className="text-[11px] text-[#6b6c78]">از</span>
-                <span className="text-2xl md:text-3xl font-black text-white">
-                  {formatToman(service.fromPriceIrt)}
-                </span>
-                <span className="text-xs text-[#6b6c78]">تومان</span>
-              </div>
-              {service.maxPriceIrt && service.maxPriceIrt !== service.fromPriceIrt && (
-                <p className="text-[10px] text-[#6b6c78] mt-1">
-                  تا {formatToman(service.maxPriceIrt)} تومان (بسته به پلن انتخابی)
-                </p>
+              {selectedPlan ? (
+                <>
+                  <div className="text-[11px] text-[#6b6c78] mb-1 line-clamp-1">
+                    {selectedPlan.titleFa}
+                  </div>
+                  {selectedPlan.compareAtIrt && getPlanDiscountPct(selectedPlan) > 0 && (
+                    <span className="text-[11px] text-[#505162] line-through block mb-1">
+                      {formatToman(selectedPlan.compareAtIrt)} تومان
+                    </span>
+                  )}
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl md:text-3xl font-black text-white">
+                      {formatToman(selectedPlan.priceIrt)}
+                    </span>
+                    <span className="text-xs text-[#6b6c78]">تومان</span>
+                  </div>
+                  {servicePlans.length > 1 && (
+                    <p className="text-[10px] text-[#6b6c78] mt-1">
+                      {toPersianDigits(servicePlans.length)} پلن قابل انتخاب
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  {service.compareAtIrt && discount > 0 && (
+                    <span className="text-[11px] text-[#505162] line-through block mb-1">
+                      {formatToman(service.compareAtIrt)} تومان
+                    </span>
+                  )}
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-[11px] text-[#6b6c78]">از</span>
+                    <span className="text-2xl md:text-3xl font-black text-white">
+                      {formatToman(service.fromPriceIrt)}
+                    </span>
+                    <span className="text-xs text-[#6b6c78]">تومان</span>
+                  </div>
+                </>
               )}
             </div>
 
@@ -244,6 +288,109 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
           </div>
         </aside>
       </div>
+
+      {/* plans */}
+      {servicePlans.length > 0 && (
+        <section className="mt-8">
+          <div className="flex items-center gap-3 mb-5">
+            <span className="w-1 h-6 bg-[#d4a853] rounded-full" />
+            <h2 className="text-lg font-black text-white">پلن‌ها و قیمت‌ها</h2>
+            <span className="text-xs text-[#6b6c78]">
+              ({toPersianDigits(servicePlans.length)} پلن)
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {servicePlans.map((p) => {
+              const planDiscount = getPlanDiscountPct(p)
+              const isSelected = p.id === selectedPlanId
+              const inStock = (p.stockStatus ?? 'IN_STOCK') === 'IN_STOCK'
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  disabled={!inStock}
+                  onClick={() => setSelectedPlanId(p.id)}
+                  className={`relative text-right bg-[#13141a] border rounded-2xl p-4 transition-all flex flex-col gap-3 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isSelected
+                      ? 'border-[#d4a853] ring-1 ring-[#d4a853]/40'
+                      : 'border-[#1e1f2a] hover:border-[#d4a853]/40'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-sm font-bold text-white leading-6 line-clamp-2 flex-1">
+                      {p.titleFa}
+                    </h3>
+                    <div className="flex flex-col gap-1 items-end shrink-0">
+                      {p.isPopular && (
+                        <span className="bg-[#d4a853] text-[#0b0c10] text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <Flame size={10} />
+                          پرفروش
+                        </span>
+                      )}
+                      {planDiscount > 0 && (
+                        <span className="bg-[#e63946] text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <Percent size={10} />
+                          {toPersianDigits(planDiscount)}٪
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5">
+                    {p.durationDays != null && (
+                      <span className="bg-[#0e0f15] border border-[#1e1f2a] text-[10px] text-[#9a9baa] px-2 py-1 rounded-md flex items-center gap-1">
+                        <Calendar size={10} />
+                        {toPersianDigits(p.durationDays)} روز
+                      </span>
+                    )}
+                    {p.credits != null && (
+                      <span className="bg-[#0e0f15] border border-[#1e1f2a] text-[10px] text-[#9a9baa] px-2 py-1 rounded-md flex items-center gap-1">
+                        <Coins size={10} />
+                        {toPersianDigits(p.credits)} اعتبار
+                      </span>
+                    )}
+                    {p.region && (
+                      <span className="bg-[#0e0f15] border border-[#1e1f2a] text-[10px] text-[#9a9baa] px-2 py-1 rounded-md flex items-center gap-1">
+                        <Globe size={10} />
+                        {p.region}
+                      </span>
+                    )}
+                    {!inStock && (
+                      <span className="bg-[#e63946]/15 text-[#e63946] text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1">
+                        <AlertCircle size={10} />
+                        ناموجود
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-auto pt-2 border-t border-[#1e1f2a] flex items-end justify-between gap-2">
+                    <div className="min-w-0">
+                      {p.compareAtIrt && planDiscount > 0 && (
+                        <span className="text-[10px] text-[#505162] line-through block leading-tight">
+                          {formatToman(p.compareAtIrt)}
+                        </span>
+                      )}
+                      <span className="font-black text-base text-white leading-tight whitespace-nowrap">
+                        {formatToman(p.priceIrt)}
+                      </span>
+                      <span className="text-[10px] text-[#6b6c78] mr-1">تومان</span>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-1 rounded-md ${
+                        isSelected
+                          ? 'bg-[#d4a853] text-[#0b0c10]'
+                          : 'bg-[#1e1f2a] text-[#9a9baa]'
+                      }`}
+                    >
+                      {isSelected ? 'انتخاب شد' : 'انتخاب'}
+                    </span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {/* related */}
       {related.length > 0 && category && (
