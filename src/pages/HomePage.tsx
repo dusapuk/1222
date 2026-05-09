@@ -24,6 +24,8 @@ import { ProductCard } from '../components/ProductCard'
 import { CategoryCard } from '../components/CategoryCard'
 import { iconFor, colorForCategory, imageForCategory } from '../lib/icons'
 import { toPersianDigits } from '../lib/format'
+import { useSEO } from '../hooks/useSEO'
+import { organizationLd, websiteLd, breadcrumbLd } from '../lib/jsonld'
 
 export type HomePageProps = {
   onNavigate: (path: string, params?: Record<string, string | number | null | undefined>) => void
@@ -34,6 +36,15 @@ export function HomePage({ onNavigate }: HomePageProps) {
   const popular = getPopularServices(12)
   const topCategories = categories.slice(0, 4)
   const totalServices = services.length
+
+  useSEO({
+    rawTitle: true,
+    title: 'پی‌کارت | خرید اشتراک‌ها و سرویس‌های دیجیتال با تحویل آنی',
+    description: `بزرگ‌ترین مارکت‌پلیس خرید اکانت‌های پرمیوم، گیفت‌کارت، اشتراک‌های بین‌المللی و سرویس‌های هوش مصنوعی در ایران. بیش از ${totalServices.toLocaleString('en-US')} سرویس فعال در ${categories.length} دسته‌بندی، تحویل آنی، ضمانت اصالت و پشتیبانی ۲۴ ساعته.`,
+    path: '/',
+    image: '/images/home/hero-premium.jpg',
+    jsonLd: [organizationLd(), websiteLd(), breadcrumbLd([])],
+  })
 
   return (
     <>
@@ -49,6 +60,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
               src="/images/home/hero-premium.jpg"
               alt=""
               aria-hidden
+              width={1280}
+              height={720}
+              fetchPriority="high"
+              decoding="async"
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
             <div
@@ -73,11 +88,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   <Flame size={12} />
                   پیشنهاد ویژه
                 </span>
-                <h2 className="text-3xl lg:text-4xl font-black text-white leading-relaxed mb-3">
-                  اشتراک‌های بین‌المللی
+                <h1 className="text-3xl lg:text-4xl font-black text-white leading-relaxed mb-3">
+                  خرید اشتراک‌های بین‌المللی
                   <br />
                   <span className="text-[#d4a853]">با بهترین قیمت</span>
-                </h2>
+                </h1>
                 <p className="text-[#9a9baa] text-sm max-w-md leading-7">
                   بیش از {toPersianDigits(totalServices.toLocaleString('en-US'))} سرویس فعال در{' '}
                   {toPersianDigits(categories.length)} دسته‌بندی — تحویل آنی، ضمانت اصالت و پرداخت

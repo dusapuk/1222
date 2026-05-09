@@ -17,6 +17,8 @@ import { Pagination } from '../components/Pagination'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { iconFor, colorForCategory, imageForCategory } from '../lib/icons'
 import { toPersianDigits } from '../lib/format'
+import { useSEO } from '../hooks/useSEO'
+import { breadcrumbLd, collectionPageLd, itemListLd } from '../lib/jsonld'
 
 export type CategoryPageProps = {
   slug: string
@@ -97,6 +99,37 @@ export function CategoryPage({
   const safePage = Math.min(page, pageCount)
   const visible = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
+  const seoPath = `/c/${slug}` + (safePage > 1 ? `?page=${safePage}` : '')
+  useSEO(
+    category
+      ? {
+          title: `خرید ${category.titleFa} با بهترین قیمت`,
+          description:
+            category.description?.replace(/\s+/g, ' ').trim() ||
+            `${toPersianDigits(all.length)} سرویس فعال در دسته ${category.titleFa} — تحویل آنی، ضمانت اصالت و پشتیبانی فارسی در پی‌کارت.`,
+          path: seoPath,
+          image: imageForCategory(slug),
+          jsonLd: [
+            breadcrumbLd([
+              { name: 'دسته‌بندی‌ها', path: '/categories' },
+              { name: category.titleFa, path: `/c/${slug}` },
+            ]),
+            collectionPageLd({
+              category,
+              count: all.length,
+              path: `/c/${slug}`,
+            }),
+            itemListLd(visible, `/c/${slug}`),
+          ],
+        }
+      : {
+          title: 'دسته‌بندی پیدا نشد',
+          description: 'دسته‌بندی مورد نظر در پی‌کارت پیدا نشد.',
+          path: `/c/${slug}`,
+          noindex: true,
+        },
+  )
+
   if (!category) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
@@ -166,7 +199,7 @@ export function CategoryPage({
                   </span>
                 )}
                 <h1 className="text-2xl font-black leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-                  {category.titleFa}
+                  خرید {category.titleFa}
                 </h1>
                 <p className="mt-1 line-clamp-1 text-xs text-white/70">
                   {category.description ?? `${toPersianDigits(all.length)} سرویس`}
@@ -218,7 +251,7 @@ export function CategoryPage({
                   </span>
                 )}
                 <h1 className="text-2xl font-black leading-tight text-white md:text-3xl">
-                  {category.titleFa}
+                  خرید {category.titleFa}
                 </h1>
                 <p className="mt-1 line-clamp-2 text-xs text-white/70">
                   {category.description ?? `${toPersianDigits(all.length)} سرویس`}

@@ -13,6 +13,8 @@ import { SortSelect } from '../components/SortSelect'
 import { Pagination } from '../components/Pagination'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { toPersianDigits } from '../lib/format'
+import { useSEO } from '../hooks/useSEO'
+import { breadcrumbLd } from '../lib/jsonld'
 
 const PAGE_SIZE = 24
 
@@ -60,6 +62,18 @@ export function SearchPage({
   const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
   const safePage = Math.min(page, pageCount)
   const visible = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
+  useSEO({
+    title: localQuery
+      ? `جستجو برای «${localQuery}»`
+      : 'جستجو در سرویس‌های پی‌کارت',
+    description: localQuery
+      ? `نتایج جستجو برای «${localQuery}» در پی‌کارت — ${filtered.length.toLocaleString('en-US')} سرویس مرتبط.`
+      : 'جستجو در میان هزاران اشتراک پرمیوم، گیفت‌کارت و سرویس دیجیتال در پی‌کارت.',
+    path: localQuery ? `/search?q=${encodeURIComponent(localQuery)}` : '/search',
+    noindex: true,
+    jsonLd: [breadcrumbLd([{ name: 'جستجو' }])],
+  })
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-5">

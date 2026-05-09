@@ -1,0 +1,26 @@
+{
+  "name": "پی‌کارت | مارکت‌پلیس سرویس‌های دیجیتال",
+  "short_name": "پی‌کارت",
+  "description": "خرید اشتراک‌های دیجیتال، اکانت‌های پرمیوم و گیفت‌کارت با تحویل آنی و ضمانت اصالت در پی‌کارت.",
+  "lang": "fa-IR",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b0c10",
+  "theme_color": "#0b0c10",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    }
+  ]
+}

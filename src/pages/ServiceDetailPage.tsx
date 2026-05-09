@@ -29,6 +29,8 @@ import { ProductCard } from '../components/ProductCard'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { formatToman, toPersianDigits } from '../lib/format'
 import { iconFor, colorForCategory } from '../lib/icons'
+import { useSEO } from '../hooks/useSEO'
+import { breadcrumbLd, productLd } from '../lib/jsonld'
 
 const FALLBACK = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%231a1b26"/><circle cx="32" cy="26" r="9" fill="%23505162"/><path d="M14 56c0-9.94 8.06-18 18-18s18 8.06 18 18" fill="%23505162"/></svg>'
 
@@ -63,6 +65,41 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
       .filter((s) => s.id !== service.id)
       .slice(0, 4)
   }, [service])
+
+  useSEO(
+    service
+      ? {
+          title: `خرید ${service.titleFa}${service.titleEn ? ` - ${service.titleEn}` : ''}`,
+          description:
+            service.shortDescriptionFa?.replace(/\s+/g, ' ').trim() ||
+            `خرید ${service.titleFa}${category ? ' در دسته ' + category.titleFa : ''} با تحویل آنی، ضمانت اصالت و پشتیبانی فارسی در پی‌کارت.`,
+          path: `/s/${slug}`,
+          image: service.logoUrl,
+          ogType: 'product',
+          jsonLd: [
+            breadcrumbLd([
+              { name: 'دسته‌بندی‌ها', path: '/categories' },
+              ...(category
+                ? [{ name: category.titleFa, path: `/c/${category.slug}` }]
+                : []),
+              { name: service.titleFa, path: `/s/${slug}` },
+            ]),
+            productLd({
+              service,
+              category,
+              plans: servicePlans,
+              cheapest: cheapestPlan,
+              path: `/s/${slug}`,
+            }),
+          ],
+        }
+      : {
+          title: 'سرویس پیدا نشد',
+          description: 'سرویس مورد نظر در پی‌کارت پیدا نشد.',
+          path: `/s/${slug}`,
+          noindex: true,
+        },
+  )
 
   if (!service) {
     return (
@@ -102,7 +139,11 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
               <div className="relative aspect-square bg-gradient-to-br from-[#1a1b26] to-[#0e0f15] overflow-hidden rounded-xl ring-1 ring-[#1e1f2a]">
                 <img
                   src={service.logoUrl ?? FALLBACK}
-                  alt={service.titleFa}
+                  alt={`خرید ${service.titleFa}${service.titleEn ? ' – ' + service.titleEn : ''}`}
+                  width={560}
+                  height={560}
+                  fetchPriority="high"
+                  decoding="async"
                   className="absolute inset-0 w-full h-full object-cover"
                   onError={(e) => {
                     ;(e.currentTarget as HTMLImageElement).src = FALLBACK
@@ -172,7 +213,7 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
                   </button>
                 )}
                 <h1 className="text-lg font-black text-white leading-tight line-clamp-2">
-                  {service.titleFa}
+                  خرید {service.titleFa}
                 </h1>
                 {service.titleEn && (
                   <p className="text-xs text-[#6b6c78] mt-0.5" dir="ltr">

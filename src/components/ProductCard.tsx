@@ -28,8 +28,11 @@ export function ProductCard({ service: s, onClick, variant = 'default' }: Produc
       <div className={`relative overflow-hidden aspect-square bg-gradient-to-br from-[#1a1b26] to-[#0e0f15] ${compact ? 'p-4' : ''}`}>
         <img
           src={s.logoUrl ?? FALLBACK}
-          alt={s.titleFa}
+          alt={`خرید ${s.titleFa}${s.titleEn ? ' – ' + s.titleEn : ''}`}
+          width={400}
+          height={400}
           loading="lazy"
+          decoding="async"
           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           onError={(e) => {
             ;(e.currentTarget as HTMLImageElement).src = FALLBACK

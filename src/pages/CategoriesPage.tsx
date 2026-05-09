@@ -4,6 +4,8 @@ import { ProductCard } from '../components/ProductCard'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { toPersianDigits } from '../lib/format'
 import { Layers } from 'lucide-react'
+import { useSEO } from '../hooks/useSEO'
+import { breadcrumbLd, itemListLd } from '../lib/jsonld'
 
 export type CategoriesPageProps = {
   onNavigate: (path: string, params?: Record<string, string | number | null | undefined>) => void
@@ -12,6 +14,16 @@ export type CategoriesPageProps = {
 export function CategoriesPage({ onNavigate }: CategoriesPageProps) {
   const featured = getFeaturedServices(8)
   const totalServices = services.length
+
+  useSEO({
+    title: 'همه دسته‌بندی‌های سرویس‌های دیجیتال',
+    description: `${categories.length.toLocaleString('en-US')} دسته‌بندی و ${totalServices.toLocaleString('en-US')} سرویس فعال — اکانت‌های پرمیوم، گیفت‌کارت، اشتراک‌های بین‌المللی و سرویس‌های هوش مصنوعی با تحویل آنی و ضمانت اصالت.`,
+    path: '/categories',
+    jsonLd: [
+      breadcrumbLd([{ name: 'دسته‌بندی‌ها', path: '/categories' }]),
+      itemListLd(featured, '/categories'),
+    ],
+  })
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
