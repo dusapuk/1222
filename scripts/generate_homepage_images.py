@@ -37,42 +37,6 @@ ITEMS: list[tuple[str, int, int, str]] = [
         "left, soft purple rim light from the right, deep midnight backdrop, premium "
         "concierge / digital subscription mood",
     ),
-    # Trust strip — instant delivery (zap, gold #d4a853)
-    (
-        "trust-zap",
-        1200,
-        400,
-        "abstract still life of a single golden lightning bolt sculpture on dark slate "
-        "surface, warm honey light streaks, fast motion blur fading right to left, "
-        "luxe gold accent on charcoal background, energy and speed mood",
-    ),
-    # Trust strip — authenticity guarantee (shield, teal #2ec4b6)
-    (
-        "trust-shield",
-        1200,
-        400,
-        "polished brushed-metal heraldic shield with subtle teal patina resting on dark "
-        "stone, soft directional teal rim light, faint protective halo, very dark "
-        "background, security and craftsmanship mood",
-    ),
-    # Trust strip — 24/7 support (headphones, purple #9b5de5)
-    (
-        "trust-headphones",
-        1200,
-        400,
-        "premium black studio headphones on dark suede, soft violet rim light, gentle haze "
-        "and bokeh, late-night radio-booth atmosphere, calm helpful mood, deep purple-to-"
-        "charcoal background",
-    ),
-    # Trust strip — secure payment (credit card, green #06d6a0)
-    (
-        "trust-card",
-        1200,
-        400,
-        "matte black metal credit card floating above a dark glass surface, faint mint-"
-        "green underglow, restrained reflective highlights, banking-grade premium feel, "
-        "deep charcoal backdrop",
-    ),
 ]
 
 

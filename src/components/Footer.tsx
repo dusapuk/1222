@@ -5,6 +5,7 @@ import {
   MessageCircle,
   Shield,
   CreditCard,
+  RotateCcw,
 } from 'lucide-react'
 import { categories } from '../lib/data'
 
@@ -86,23 +87,56 @@ export function Footer({ onNavigate }: FooterProps) {
           </div>
 
           <div className="md:col-span-3">
-            <h4 className="font-bold text-sm text-white mb-4">نماد اعتماد</h4>
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              <div className="bg-[#16171f] rounded-xl p-3 flex items-center justify-center aspect-square">
-                <div className="text-center">
-                  <Shield size={22} className="mx-auto text-[#2ec4b6] mb-1" />
-                  <span className="text-[8px] text-[#6b6c78] block">نماد اعتماد</span>
-                  <span className="text-[8px] text-[#6b6c78]">الکترونیکی</span>
-                </div>
-              </div>
-              <div className="bg-[#16171f] rounded-xl p-3 flex items-center justify-center aspect-square">
-                <div className="text-center">
-                  <CreditCard size={22} className="mx-auto text-[#d4a853] mb-1" />
-                  <span className="text-[8px] text-[#6b6c78] block">درگاه پرداخت</span>
-                  <span className="text-[8px] text-[#6b6c78]">معتبر</span>
-                </div>
-              </div>
-            </div>
+            <h4 className="font-bold text-sm text-white mb-4">ضمانت‌ها</h4>
+            <ul className="space-y-2 mb-6">
+              {[
+                {
+                  icon: Shield,
+                  label: 'نماد اعتماد الکترونیکی',
+                  hint: 'enamad.ir',
+                  color: '#2ec4b6',
+                },
+                {
+                  icon: CreditCard,
+                  label: 'درگاه پرداخت معتبر',
+                  hint: 'بانک مرکزی',
+                  color: '#d4a853',
+                },
+                {
+                  icon: RotateCcw,
+                  label: 'گارانتی بازگشت وجه',
+                  hint: 'تا ۷۲ ساعت',
+                  color: '#9b5de5',
+                },
+              ].map((it) => {
+                const I = it.icon
+                return (
+                  <li
+                    key={it.label}
+                    className="relative overflow-hidden bg-[#16171f] border border-[#1e1f2a] rounded-xl px-3 py-2.5 flex items-center gap-3"
+                  >
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute -left-6 top-1/2 -translate-y-1/2 h-16 w-16 rounded-full blur-2xl opacity-30"
+                      style={{ background: it.color }}
+                    />
+                    <div
+                      className="relative w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                      style={{
+                        background: `${it.color}1f`,
+                        border: `1px solid ${it.color}40`,
+                      }}
+                    >
+                      <I size={16} style={{ color: it.color }} />
+                    </div>
+                    <div className="relative min-w-0 flex-1">
+                      <div className="text-xs font-bold text-white truncate">{it.label}</div>
+                      <div className="text-[10px] text-[#6b6c78] truncate">{it.hint}</div>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
             <h4 className="font-bold text-sm text-white mb-3">قوانین</h4>
             <ul className="space-y-2 text-xs text-[#6b6c78]">
               {footerLinks.legal.map((link) => (
