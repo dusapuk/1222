@@ -25,17 +25,17 @@ export function ProductCard({ service: s, onClick, variant = 'default' }: Produc
       }}
       className="group bg-[#13141a] border border-[#1e1f2a] rounded-2xl overflow-hidden hover:border-[#d4a853]/40 transition-all cursor-pointer flex flex-col focus:outline-none focus:ring-2 focus:ring-[#d4a853]/50"
     >
-      <div className={`relative overflow-hidden ${compact ? 'aspect-[5/3]' : 'aspect-square'} bg-gradient-to-br from-[#1a1b26] to-[#0e0f15]`}>
+      <div className={`relative overflow-hidden aspect-square bg-gradient-to-br from-[#1a1b26] to-[#0e0f15] ${compact ? 'p-4' : ''}`}>
         <img
           src={s.logoUrl ?? FALLBACK}
           alt={s.titleFa}
           loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           onError={(e) => {
             ;(e.currentTarget as HTMLImageElement).src = FALLBACK
           }}
         />
-        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0b0c10]/80 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0b0c10]/70 to-transparent pointer-events-none" />
 
         <div className="absolute top-3 right-3 flex flex-col gap-1.5">
           {discount > 0 && (

@@ -98,16 +98,18 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
         {/* main info */}
         <div className="lg:col-span-7">
           <div className="bg-[#13141a] border border-[#1e1f2a] rounded-2xl overflow-hidden">
-            <div className="relative aspect-[5/3] bg-gradient-to-br from-[#1a1b26] to-[#0e0f15] overflow-hidden">
-              <img
-                src={service.logoUrl ?? FALLBACK}
-                alt={service.titleFa}
-                className="absolute inset-0 w-full h-full object-cover"
-                onError={(e) => {
-                  ;(e.currentTarget as HTMLImageElement).src = FALLBACK
-                }}
-              />
-              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0b0c10]/80 to-transparent pointer-events-none" />
+            <div className="mx-auto w-full max-w-[460px] sm:max-w-[520px] md:max-w-[560px] p-3 sm:p-4">
+              <div className="relative aspect-square bg-gradient-to-br from-[#1a1b26] to-[#0e0f15] overflow-hidden rounded-xl ring-1 ring-[#1e1f2a]">
+                <img
+                  src={service.logoUrl ?? FALLBACK}
+                  alt={service.titleFa}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  onError={(e) => {
+                    ;(e.currentTarget as HTMLImageElement).src = FALLBACK
+                  }}
+                />
+                <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-[#0b0c10]/70 to-transparent pointer-events-none" />
+              </div>
             </div>
           </div>
 
