@@ -22,7 +22,7 @@ import {
 } from '../lib/data'
 import { ProductCard } from '../components/ProductCard'
 import { CategoryCard } from '../components/CategoryCard'
-import { iconFor, colorForCategory } from '../lib/icons'
+import { iconFor, colorForCategory, imageForCategory } from '../lib/icons'
 import { toPersianDigits } from '../lib/format'
 
 export type HomePageProps = {
@@ -100,34 +100,62 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {topCategories.map((c, idx) => {
               const Icon = iconFor(c.icon)
               const color = colorForCategory(c.slug)
+              const image = imageForCategory(c.slug)
+              const wide = idx === 3
               return (
                 <button
                   key={c.id}
                   type="button"
                   onClick={() => onNavigate('/c/' + c.slug)}
-                  className={`relative rounded-2xl overflow-hidden cursor-pointer group text-right ${
-                    idx === 3 ? 'col-span-2' : ''
+                  className={`group relative cursor-pointer overflow-hidden rounded-2xl text-right ring-1 ring-[#1e1f2a] transition-all hover:ring-[#d4a853]/40 ${
+                    wide ? 'col-span-2' : ''
                   }`}
-                  style={{ minHeight: idx === 3 ? 110 : 155 }}
+                  style={{ minHeight: wide ? 110 : 155 }}
                 >
+                  <img
+                    src={image}
+                    alt={c.titleFa}
+                    loading="lazy"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
                   <div
-                    className="absolute inset-0"
+                    aria-hidden
+                    className="absolute inset-0 mix-blend-multiply opacity-50 transition-opacity group-hover:opacity-30"
                     style={{
-                      background: `linear-gradient(135deg, ${color}22 0%, #0e0f15 60%, #0b0c10 100%)`,
+                      background: `linear-gradient(135deg, ${color}33 0%, #0b0c10cc 100%)`,
                     }}
                   />
-                  <div className="relative p-5 flex flex-col justify-between h-full">
+                  <div
+                    aria-hidden
+                    className="absolute inset-x-0 bottom-0 h-3/4"
+                    style={{
+                      background:
+                        'linear-gradient(to top, rgba(8,9,14,0.96) 0%, rgba(8,9,14,0.78) 35%, rgba(8,9,14,0.18) 75%, rgba(8,9,14,0) 100%)',
+                    }}
+                  />
+                  <div className="relative flex h-full flex-col justify-between p-4">
                     <div
-                      className="w-9 h-9 rounded-lg flex items-center justify-center"
-                      style={{ background: `${color}25`, border: `1px solid ${color}55` }}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg backdrop-blur-md"
+                      style={{
+                        background: `${color}26`,
+                        border: `1px solid ${color}66`,
+                        boxShadow: `0 4px 14px -6px ${color}88`,
+                      }}
                     >
                       <Icon size={18} style={{ color }} />
                     </div>
                     <div>
-                      <span className="text-[10px] font-bold mb-1 block" style={{ color }}>
+                      <span
+                        className="mb-1 inline-block rounded-md px-1.5 py-0.5 text-[10px] font-bold backdrop-blur-md"
+                        style={{
+                          background: `${color}26`,
+                          color,
+                          border: `1px solid ${color}55`,
+                        }}
+                      >
                         {toPersianDigits(getCategoryServiceCount(c.id))} سرویس
                       </span>
-                      <span className="text-sm font-bold text-white group-hover:text-[#d4a853] transition-colors line-clamp-1">
+                      <span className="block text-base font-black leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] line-clamp-1 transition-colors group-hover:text-[#d4a853]">
                         {c.titleFa}
                       </span>
                     </div>
