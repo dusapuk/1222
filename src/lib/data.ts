@@ -1,4 +1,18 @@
-import raw from '../data/marketplace.json'
+/**
+ * Runtime marketplace data store.
+ *
+ * Historically `marketplace.json` (~3.9 MB raw, ~440 KB gzip) was
+ * statically imported, which baked the catalogue into the JS bundle and
+ * blew the initial bundle up to 4.2 MB. We now serve it as a separate
+ * static asset (`/data/marketplace.json`) and fetch it once at startup
+ * via `initMarketplaceData()` in `main.tsx`. The browser caches it
+ * independently of our JS, and the JS bundle stays small.
+ *
+ * Pages keep using the same synchronous getters (`getServiceBySlug`,
+ * `getServicesByCategory`, ...). They will just see an empty catalogue
+ * until `initMarketplaceData()` resolves; the loader in `main.tsx`
+ * blocks the React mount on that promise.
+ */
 
 export type Category = {
   id: string
@@ -58,17 +72,16 @@ export type Plan = {
   features: Record<string, unknown> | null
 }
 
-type Marketplace = {
+export type Marketplace = {
   categories: Category[]
   services: Service[]
   plans: Plan[]
 }
 
-const data = raw as unknown as Marketplace
-
-export const categories: Category[] = data.categories
-export const services: Service[] = data.services
-export const plans: Plan[] = data.plans ?? []
+// Mutable module-level stores. Empty until `initMarketplaceData()` runs.
+export let categories: Category[] = []
+export let services: Service[] = []
+export let plans: Plan[] = []
 
 const categoryById = new Map<string, Category>()
 const categoryBySlug = new Map<string, Category>()
@@ -76,23 +89,61 @@ const serviceBySlug = new Map<string, Service>()
 const servicesByCategory = new Map<string, Service[]>()
 const plansByService = new Map<string, Plan[]>()
 
-for (const c of categories) {
-  categoryById.set(c.id, c)
-  categoryBySlug.set(c.slug, c)
+let dataReady = false
+
+export function isMarketplaceReady(): boolean {
+  return dataReady
 }
-for (const s of services) {
-  serviceBySlug.set(s.slug, s)
-  const arr = servicesByCategory.get(s.categoryId) ?? []
-  arr.push(s)
-  servicesByCategory.set(s.categoryId, arr)
+
+export function setMarketplaceData(data: Marketplace): void {
+  categories = data.categories ?? []
+  services = data.services ?? []
+  plans = data.plans ?? []
+
+  categoryById.clear()
+  categoryBySlug.clear()
+  serviceBySlug.clear()
+  servicesByCategory.clear()
+  plansByService.clear()
+
+  for (const c of categories) {
+    categoryById.set(c.id, c)
+    categoryBySlug.set(c.slug, c)
+  }
+  for (const s of services) {
+    serviceBySlug.set(s.slug, s)
+    const arr = servicesByCategory.get(s.categoryId) ?? []
+    arr.push(s)
+    servicesByCategory.set(s.categoryId, arr)
+  }
+  for (const p of plans) {
+    const arr = plansByService.get(p.serviceId) ?? []
+    arr.push(p)
+    plansByService.set(p.serviceId, arr)
+  }
+  for (const arr of plansByService.values()) {
+    arr.sort((a, b) => a.sortOrder - b.sortOrder)
+  }
+
+  dataReady = true
 }
-for (const p of plans) {
-  const arr = plansByService.get(p.serviceId) ?? []
-  arr.push(p)
-  plansByService.set(p.serviceId, arr)
-}
-for (const arr of plansByService.values()) {
-  arr.sort((a, b) => a.sortOrder - b.sortOrder)
+
+let pending: Promise<void> | null = null
+
+/**
+ * Fetch /data/marketplace.json and populate the in-memory stores.
+ * Idempotent — concurrent calls share the same promise.
+ */
+export function initMarketplaceData(): Promise<void> {
+  if (dataReady) return Promise.resolve()
+  if (pending) return pending
+  pending = fetch('/data/marketplace.json')
+    .then((r) => {
+      if (!r.ok) throw new Error(`marketplace fetch ${r.status}`)
+      return r.json() as Promise<Marketplace>
+    })
+    .then(setMarketplaceData)
+  return pending
 }
 
 export function getCategoryBySlug(slug: string): Category | undefined {
@@ -193,7 +244,7 @@ export function applySort(list: Service[], key: SortKey): Service[] {
       arr.sort((a, b) => (a.fromPriceIrt ?? Infinity) - (b.fromPriceIrt ?? Infinity))
       break
     case 'price-desc':
-      arr.sort((a, b) => (b.fromPriceIrt ?? -1) - (a.fromPriceIrt ?? -1))
+      arr.sort((a, b) => (b.fromPriceIrt ?? -Infinity) - (a.fromPriceIrt ?? -Infinity))
       break
     case 'discount':
       arr.sort((a, b) => getDiscountPct(b) - getDiscountPct(a))
@@ -203,13 +254,12 @@ export function applySort(list: Service[], key: SortKey): Service[] {
       break
     case 'popular':
     default:
-      arr.sort((a, b) => {
-        const pa = (a.isPopular ? 1 : 0) - (b.isPopular ? 1 : 0)
-        if (pa !== 0) return -pa
-        const ip = (a.inStock ? 1 : 0) - (b.inStock ? 1 : 0)
-        if (ip !== 0) return -ip
-        return b.planCount - a.planCount
-      })
+      arr.sort(
+        (a, b) =>
+          Number(b.isFeatured) - Number(a.isFeatured) ||
+          Number(b.isPopular) - Number(a.isPopular) ||
+          (a.fromPriceIrt ?? Infinity) - (b.fromPriceIrt ?? Infinity),
+      )
       break
   }
   return arr
@@ -217,51 +267,25 @@ export function applySort(list: Service[], key: SortKey): Service[] {
 
 export function getPriceRange(list: Service[]): { min: number; max: number } {
   let min = Infinity
-  let max = 0
+  let max = -Infinity
   for (const s of list) {
-    if (s.fromPriceIrt == null) continue
-    if (s.fromPriceIrt < min) min = s.fromPriceIrt
-    if (s.fromPriceIrt > max) max = s.fromPriceIrt
+    if (s.fromPriceIrt != null) {
+      if (s.fromPriceIrt < min) min = s.fromPriceIrt
+      if (s.fromPriceIrt > max) max = s.fromPriceIrt
+    }
+    if (s.maxPriceIrt != null && s.maxPriceIrt > max) max = s.maxPriceIrt
   }
   if (!isFinite(min)) min = 0
+  if (!isFinite(max)) max = 0
   return { min, max }
 }
 
-/* derive a few "featured" services per category for the home page */
 export function getFeaturedServices(limit = 8): Service[] {
-  const featured: Service[] = []
-  const perCategory = new Map<string, number>()
-  // pick services with discount first, sorted by discount pct
-  const withDiscount = [...services]
-    .filter((s) => getDiscountPct(s) > 0 && s.inStock)
-    .sort((a, b) => getDiscountPct(b) - getDiscountPct(a))
-  for (const s of withDiscount) {
-    const n = perCategory.get(s.categoryId) ?? 0
-    if (n >= 2) continue
-    perCategory.set(s.categoryId, n + 1)
-    featured.push(s)
-    if (featured.length >= limit) break
-  }
-  if (featured.length < limit) {
-    for (const s of services) {
-      if (!s.inStock) continue
-      if (featured.includes(s)) continue
-      featured.push(s)
-      if (featured.length >= limit) break
-    }
-  }
-  return featured.slice(0, limit)
+  return services.filter((s) => s.isFeatured).slice(0, limit)
 }
 
 export function getPopularServices(limit = 12): Service[] {
-  return [...services]
-    .filter((s) => s.inStock)
-    .sort((a, b) => {
-      const pa = (a.isPopular ? 1 : 0) - (b.isPopular ? 1 : 0)
-      if (pa !== 0) return -pa
-      return b.planCount - a.planCount
-    })
-    .slice(0, limit)
+  return services.filter((s) => s.isPopular).slice(0, limit)
 }
 
 export function searchServices(q: string, limit = 8): Service[] {

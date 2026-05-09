@@ -38,7 +38,6 @@ import {
   DEFAULT_TITLE,
   SITE_LOCALE,
   SITE_NAME,
-  SITE_URL,
   TWITTER_HANDLE,
   absoluteUrl,
 } from '../src/lib/seo'
@@ -78,7 +77,7 @@ if (!existsSync(templatePath)) {
 }
 
 const marketplace = JSON.parse(
-  readFileSync(resolve(repoRoot, 'src/data/marketplace.json'), 'utf8'),
+  readFileSync(resolve(repoRoot, 'public/data/marketplace.json'), 'utf8'),
 ) as { categories: Category[]; services: Service[]; plans: Plan[] }
 
 const categoryById = new Map(marketplace.categories.map((c) => [c.id, c]))

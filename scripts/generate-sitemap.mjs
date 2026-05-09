@@ -1,4 +1,4 @@
-// Build-time sitemap generator. Reads `src/data/marketplace.json` and emits
+// Build-time sitemap generator. Reads `public/data/marketplace.json` and emits
 // `public/sitemap.xml` listing every static route, every category page, and
 // every service detail page on the site.
 //
@@ -13,7 +13,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(__dirname, '..')
 
 const SITE_URL = process.env.PIKART_SITE_URL?.replace(/\/$/, '') || 'https://pikart.ir'
-const dataPath = resolve(repoRoot, 'src/data/marketplace.json')
+const dataPath = resolve(repoRoot, 'public/data/marketplace.json')
 const publicDir = resolve(repoRoot, 'public')
 const outPath = resolve(publicDir, 'sitemap.xml')
 

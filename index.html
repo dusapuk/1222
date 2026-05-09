@@ -47,6 +47,10 @@
     <link rel="alternate" hreflang="fa-IR" href="https://pikart.ir/" />
     <link rel="alternate" hreflang="x-default" href="https://pikart.ir/" />
 
+    <!-- Preload the marketplace catalogue in parallel with the JS bundle so
+         the React app can render as soon as both arrive. -->
+    <link rel="preload" as="fetch" type="application/json" href="/data/marketplace.json" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -87,7 +91,41 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div
+        id="initial-loading"
+        style="
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          font-family: 'Vazirmatn', system-ui, sans-serif;
+          background: #0b0c10;
+          color: #c4c5d0;
+        "
+      >
+        <div style="text-align: center;">
+          <div
+            style="
+              width: 40px;
+              height: 40px;
+              margin: 0 auto 12px;
+              border: 3px solid #2a2b35;
+              border-top-color: #d4a853;
+              border-radius: 50%;
+              animation: pikart-spin 0.9s linear infinite;
+            "
+          ></div>
+          <p style="font-size: 13px; color: #8a8b96;">در حال بارگذاری پی‌کارت…</p>
+        </div>
+      </div>
+    </div>
+    <style>
+      @keyframes pikart-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+    </style>
     <noscript>
       <div style="font-family: 'Vazirmatn', system-ui, sans-serif; padding: 24px; text-align: center; color: #c4c5d0; background: #0b0c10;">
         <h1>پی‌کارت | مارکت‌پلیس سرویس‌های دیجیتال</h1>
