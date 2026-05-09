@@ -3,11 +3,14 @@ import {
   DEFAULT_DESCRIPTION,
   DEFAULT_OG_IMAGE,
   DEFAULT_TITLE,
+  ROBOTS_INDEX,
+  ROBOTS_NOINDEX,
   SITE_LOCALE,
   SITE_NAME,
   SITE_URL,
   TWITTER_HANDLE,
   absoluteUrl,
+  imageMimeFor,
 } from '../lib/seo'
 
 export type SEOConfig = {
@@ -20,6 +23,12 @@ export type SEOConfig = {
   path: string
   /** Optional absolute or site-relative image URL for og:image / twitter:image. */
   image?: string | null
+  /** Alt text for og:image / twitter:image — improves social previews + a11y. */
+  imageAlt?: string | null
+  /** Pixel width of the OG image (when known); helps social link unfurlers. */
+  imageWidth?: number | null
+  /** Pixel height of the OG image (when known). */
+  imageHeight?: number | null
   /** OpenGraph type. Defaults to "website". Use "product" on service pages. */
   ogType?: string
   /** If true, set <meta name="robots" content="noindex,follow">. Defaults to false. */
@@ -40,6 +49,9 @@ export function useSEO(config: SEOConfig): void {
     description,
     path,
     image,
+    imageAlt,
+    imageWidth,
+    imageHeight,
     ogType = 'website',
     noindex = false,
     jsonLd,
@@ -62,9 +74,11 @@ export function useSEO(config: SEOConfig): void {
     const canonical = absoluteUrl(path)
     const desc = (description ?? DEFAULT_DESCRIPTION).replace(/\s+/g, ' ').trim()
     const img = image ? absoluteUrl(image) : absoluteUrl(DEFAULT_OG_IMAGE)
+    const imgMime = imageMimeFor(img)
+    const imgAlt = (imageAlt ?? finalTitle).replace(/\s+/g, ' ').trim()
 
     setMeta('name', 'description', desc)
-    setMeta('name', 'robots', noindex ? 'noindex,follow' : 'index,follow')
+    setMeta('name', 'robots', noindex ? ROBOTS_NOINDEX : ROBOTS_INDEX)
 
     setMeta('property', 'og:type', ogType)
     setMeta('property', 'og:site_name', SITE_NAME)
@@ -73,12 +87,18 @@ export function useSEO(config: SEOConfig): void {
     setMeta('property', 'og:description', desc)
     setMeta('property', 'og:url', canonical)
     setMeta('property', 'og:image', img)
+    setMeta('property', 'og:image:secure_url', img)
+    if (imgAlt) setMeta('property', 'og:image:alt', imgAlt)
+    if (imgMime) setMeta('property', 'og:image:type', imgMime)
+    if (imageWidth) setMeta('property', 'og:image:width', String(imageWidth))
+    if (imageHeight) setMeta('property', 'og:image:height', String(imageHeight))
 
     setMeta('name', 'twitter:card', 'summary_large_image')
     setMeta('name', 'twitter:site', TWITTER_HANDLE)
     setMeta('name', 'twitter:title', finalTitle)
     setMeta('name', 'twitter:description', desc)
     setMeta('name', 'twitter:image', img)
+    if (imgAlt) setMeta('name', 'twitter:image:alt', imgAlt)
 
     setLink('canonical', canonical)
 
@@ -98,7 +118,19 @@ export function useSEO(config: SEOConfig): void {
     return () => {
       for (const remove of removers) remove()
     }
-  }, [title, rawTitle, description, path, image, ogType, noindex, jsonLdKey])
+  }, [
+    title,
+    rawTitle,
+    description,
+    path,
+    image,
+    imageAlt,
+    imageWidth,
+    imageHeight,
+    ogType,
+    noindex,
+    jsonLdKey,
+  ])
 }
 
 function setMeta(attr: 'name' | 'property', key: string, value: string): void {

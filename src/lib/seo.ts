@@ -40,6 +40,45 @@ export function clampDescription(input: string | null | undefined, max = 158): s
 }
 
 /**
+ * Robots directive emitted on every indexable page. The `max-*-preview`
+ * directives explicitly opt-in to large image previews and full snippets
+ * in Google SERP — Google falls back to conservative defaults otherwise.
+ *
+ * Mirrors what Yoast/RankMath emit by default on competing Persian
+ * marketplaces (e.g. paymenter.store) so we don't leave SERP real-estate
+ * on the table.
+ */
+export const ROBOTS_INDEX = 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1'
+export const ROBOTS_NOINDEX = 'noindex, follow'
+
+/**
+ * Map a file extension to an OpenGraph `og:image:type` MIME. Unknown
+ * extensions return null so we omit the meta rather than emit a guess.
+ */
+export function imageMimeFor(url: string | null | undefined): string | null {
+  if (!url) return null
+  const m = url.toLowerCase().match(/\.([a-z0-9]+)(?:[?#]|$)/)
+  if (!m) return null
+  switch (m[1]) {
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg'
+    case 'png':
+      return 'image/png'
+    case 'webp':
+      return 'image/webp'
+    case 'gif':
+      return 'image/gif'
+    case 'svg':
+      return 'image/svg+xml'
+    case 'avif':
+      return 'image/avif'
+    default:
+      return null
+  }
+}
+
+/**
  * Canonical absolute URL for a route path. Currently the site uses
  * History-API style paths (`/s/<slug>`, `/c/<slug>`, ...). The hash-routed
  * variants exist only as legacy fallbacks and redirect on load.

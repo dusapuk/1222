@@ -36,10 +36,13 @@ import {
   DEFAULT_DESCRIPTION,
   DEFAULT_OG_IMAGE,
   DEFAULT_TITLE,
+  ROBOTS_INDEX,
+  ROBOTS_NOINDEX,
   SITE_LOCALE,
   SITE_NAME,
   TWITTER_HANDLE,
   absoluteUrl,
+  imageMimeFor,
 } from '../src/lib/seo'
 import type { SEOConfig } from '../src/hooks/useSEO'
 import type { Category, Plan, Service, ServiceDetail } from '../src/lib/data'
@@ -214,7 +217,9 @@ function buildHead(seo: SEOConfig): {
   const canonical = absoluteUrl(seo.path)
   const img = seo.image ? absoluteUrl(seo.image) : absoluteUrl(DEFAULT_OG_IMAGE)
   const ogType = seo.ogType ?? 'website'
-  const robots = seo.noindex ? 'noindex,follow' : 'index,follow'
+  const robots = seo.noindex ? ROBOTS_NOINDEX : ROBOTS_INDEX
+  const imgMime = imageMimeFor(img)
+  const imgAlt = (seo.imageAlt ?? finalTitle).replace(/\s+/g, ' ').trim()
 
   const tags: string[] = [
     metaTag('name', 'description', desc),
@@ -226,15 +231,26 @@ function buildHead(seo: SEOConfig): {
     metaTag('property', 'og:description', desc),
     metaTag('property', 'og:url', canonical),
     metaTag('property', 'og:image', img),
+    metaTag('property', 'og:image:secure_url', img),
+  ]
+  if (imgAlt) tags.push(metaTag('property', 'og:image:alt', imgAlt))
+  if (imgMime) tags.push(metaTag('property', 'og:image:type', imgMime))
+  if (seo.imageWidth) tags.push(metaTag('property', 'og:image:width', String(seo.imageWidth)))
+  if (seo.imageHeight) tags.push(metaTag('property', 'og:image:height', String(seo.imageHeight)))
+
+  tags.push(
     metaTag('name', 'twitter:card', 'summary_large_image'),
     metaTag('name', 'twitter:site', TWITTER_HANDLE),
     metaTag('name', 'twitter:title', finalTitle),
     metaTag('name', 'twitter:description', desc),
     metaTag('name', 'twitter:image', img),
+  )
+  if (imgAlt) tags.push(metaTag('name', 'twitter:image:alt', imgAlt))
+  tags.push(
     linkTag('canonical', canonical),
     linkTag('alternate', canonical, { hreflang: 'fa-IR' }),
     linkTag('alternate', canonical, { hreflang: 'x-default' }),
-  ]
+  )
 
   const jsonLd: string[] = []
   for (const payload of seo.jsonLd ?? []) {

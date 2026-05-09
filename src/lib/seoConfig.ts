@@ -35,6 +35,10 @@ export function seoForHome(args: {
     ),
     path: '/',
     image: '/images/home/hero-premium.jpg',
+    imageAlt:
+      'پی‌کارت — مارکت‌پلیس خرید اشتراک‌های بین‌المللی، اکانت‌های پرمیوم و گیفت‌کارت',
+    imageWidth: 1144,
+    imageHeight: 515,
     jsonLd: [organizationLd(), websiteLd(), breadcrumbLd([])],
   }
 }
@@ -51,6 +55,9 @@ export function seoForCategoriesIndex(args: {
       `${categoryCount.toLocaleString('en-US')} دسته‌بندی و ${serviceCount.toLocaleString('en-US')} سرویس فعال — اکانت‌های پرمیوم، گیفت‌کارت، اشتراک‌های بین‌المللی و سرویس‌های هوش مصنوعی با تحویل آنی و ضمانت اصالت.`,
     ),
     path: '/categories',
+    imageAlt: 'دسته‌بندی‌های سرویس‌های دیجیتال در پی‌کارت',
+    imageWidth: 1200,
+    imageHeight: 630,
     jsonLd: [
       breadcrumbLd([{ name: 'دسته‌بندی‌ها', path: '/categories' }]),
       {
@@ -85,6 +92,7 @@ export function seoForCategory(args: {
     ),
     path,
     image: categoryImage,
+    imageAlt: `خرید ${category.titleFa} در پی‌کارت`,
     jsonLd: [
       breadcrumbLd([
         { name: 'دسته‌بندی‌ها', path: '/categories' },
@@ -155,12 +163,15 @@ export function seoForService(args: {
     if (fp) jsonLd.push(fp)
   }
 
+  const imageAlt = `خرید ${service.titleFa}${service.titleEn ? ` – ${service.titleEn}` : ''} در پی‌کارت`
+
   return {
     rawTitle: !!detail?.seoTitleFa,
     title: titleRaw,
     description,
     path,
     image: service.logoUrl,
+    imageAlt,
     ogType: 'product',
     jsonLd,
   }
