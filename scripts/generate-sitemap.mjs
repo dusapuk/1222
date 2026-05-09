@@ -46,6 +46,13 @@ const entries = []
 entries.push(url('/', { priority: '1.0', changefreq: 'daily' }))
 entries.push(url('/categories', { priority: '0.9', changefreq: 'daily' }))
 
+// Trust / content pages — these are referenced from the footer of every
+// page so they should be discoverable directly from the sitemap too.
+const TRUST_PAGES = ['about', 'contact', 'privacy', 'terms', 'refund', 'faq', 'guide']
+for (const slug of TRUST_PAGES) {
+  entries.push(url(`/${slug}`, { priority: '0.5', changefreq: 'monthly' }))
+}
+
 // Category pages
 for (const c of data.categories ?? []) {
   if (!c.slug) continue

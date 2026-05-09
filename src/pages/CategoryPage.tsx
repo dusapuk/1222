@@ -106,6 +106,7 @@ export function CategoryPage({
           services: visible.length > 0 ? visible : all,
           categoryImage: imageForCategory(slug),
           page: safePage,
+          pageCount,
         })
       : seoForCategoryNotFound(slug),
   )

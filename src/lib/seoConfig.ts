@@ -11,7 +11,7 @@
  */
 import type { Category, Plan, Service, ServiceDetail } from './data'
 import type { SEOConfig } from '../hooks/useSEO'
-import { clampDescription } from './seo'
+import { absoluteUrl, clampDescription } from './seo'
 import {
   breadcrumbLd,
   collectionPageLd,
@@ -21,6 +21,7 @@ import {
   productLd,
   websiteLd,
 } from './jsonld'
+import type { StaticPage } from './staticPages'
 
 export function seoForHome(args: {
   categoryCount: number
@@ -81,9 +82,25 @@ export function seoForCategory(args: {
   services: Service[]
   categoryImage?: string | null
   page?: number
+  pageCount?: number
 }): SEOConfig {
-  const { category, services, categoryImage, page = 1 } = args
+  const { category, services, categoryImage, page = 1, pageCount } = args
+  // Canonical drops `?page=1` so the bare and paged variant don't compete
+  // for ranking; only emit ?page=N when N > 1.
   const path = `/c/${category.slug}` + (page > 1 ? `?page=${page}` : '')
+
+  // rel=next / rel=prev for paginated category indexes — Bing/Yandex still
+  // honour these and Google has reaffirmed they're "informational" signals.
+  const basePath = `/c/${category.slug}`
+  const linkRelPrev =
+    page > 1
+      ? page === 2
+        ? absoluteUrl(basePath)
+        : absoluteUrl(`${basePath}?page=${page - 1}`)
+      : null
+  const linkRelNext =
+    pageCount != null && page < pageCount ? absoluteUrl(`${basePath}?page=${page + 1}`) : null
+
   return {
     title: `خرید ${category.titleFa} با بهترین قیمت`,
     description: clampDescription(
@@ -93,6 +110,8 @@ export function seoForCategory(args: {
     path,
     image: categoryImage,
     imageAlt: `خرید ${category.titleFa} در پی‌کارت`,
+    linkRelNext,
+    linkRelPrev,
     jsonLd: [
       breadcrumbLd([
         { name: 'دسته‌بندی‌ها', path: '/categories' },
@@ -183,6 +202,37 @@ export function seoForServiceNotFound(slug: string): SEOConfig {
     description: 'سرویس مورد نظر در پی‌کارت پیدا نشد.',
     path: `/s/${slug}`,
     noindex: true,
+  }
+}
+
+export function seoForStaticPage(page: StaticPage): SEOConfig {
+  const breadcrumbItems = [{ name: page.breadcrumbFa ?? page.titleFa, path: page.path }]
+  const jsonLd: Array<Record<string, unknown> | null> = [
+    breadcrumbLd(breadcrumbItems),
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      '@id': absoluteUrl(page.path) + '#webpage',
+      url: absoluteUrl(page.path),
+      name: page.titleFa,
+      description: clampDescription(page.descriptionFa),
+      inLanguage: 'fa-IR',
+      isPartOf: { '@id': 'https://pikart.ir/#website' },
+      breadcrumb: breadcrumbLd(breadcrumbItems),
+    },
+  ]
+
+  if (page.faq && page.faq.length > 0) {
+    const fp = faqLd(page.faq)
+    if (fp) jsonLd.push(fp)
+  }
+
+  return {
+    title: page.titleFa,
+    description: clampDescription(page.descriptionFa),
+    path: page.path,
+    imageAlt: `${page.titleFa} — پی‌کارت`,
+    jsonLd,
   }
 }
 

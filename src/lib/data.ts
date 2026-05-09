@@ -241,12 +241,22 @@ export const defaultFilter: FilterState = {
   popularOnly: false,
 }
 
+// Map Persian (۰-۹) and Arabic-Indic (٠-٩) digits to Latin (0-9) so
+// "خرید گیفت کارت ۱۲۰۰ تومان" and "1200 toman" match the same record.
+const PERSIAN_DIGIT_MAP: Record<string, string> = {
+  '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4',
+  '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9',
+  '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4',
+  '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9',
+}
+
 function normalize(s: string): string {
   return s
     .toLowerCase()
     .replace(/[\u064b-\u065f]/g, '') // arabic diacritics
     .replace(/[يى]/g, 'ی')
     .replace(/ك/g, 'ک')
+    .replace(/[۰-۹٠-٩]/g, (d) => PERSIAN_DIGIT_MAP[d] ?? d)
     .trim()
 }
 
