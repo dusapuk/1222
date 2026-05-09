@@ -13,7 +13,6 @@ import {
 } from '../lib/data'
 import { ProductCard } from '../components/ProductCard'
 import { CategoryCard } from '../components/CategoryCard'
-import { iconFor, imageForCategory } from '../lib/icons'
 import { toPersianDigits } from '../lib/format'
 
 export type HomePageProps = {
@@ -23,30 +22,46 @@ export type HomePageProps = {
 export function HomePage({ onNavigate }: HomePageProps) {
   const featured = getFeaturedServices(8)
   const popular = getPopularServices(12)
-  const topCategories = categories.slice(0, 4)
   const totalServices = services.length
 
   return (
     <>
-      {/* hero — editorial split: large serif headline + photo card */}
-      <section className="max-w-7xl mx-auto px-4 pt-8 pb-2">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          <div className="lg:col-span-7 lg:order-1 order-2">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.18em] text-[#c2410c]">
-              <span className="block h-px w-6 bg-[#c2410c]" />
+      {/* hero — editorial magazine cover. Eyebrow → giant headline → strapline + cta → full-bleed image. */}
+      <section className="border-b border-[#e8e6e0]">
+        <div className="max-w-7xl mx-auto px-4 pt-10 pb-10 md:pt-14 md:pb-14">
+          <div className="flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.22em] text-[#5b5755]">
+            <span className="tabular-nums">№ ۰۱ / ۱۴۰۴</span>
+            <span className="flex items-center gap-3">
               مارکت‌پلیس سرویس‌های دیجیتال
+              <span className="hidden sm:block h-px w-10 bg-[#5b5755]" />
             </span>
-            <h1 className="font-display mt-3 text-4xl leading-[1.1] text-[#141413] md:text-5xl lg:text-6xl">
-              اشتراک‌های بین‌المللی،
-              <br />
-              <span className="text-[#c2410c]">با بهترین قیمت بازار.</span>
-            </h1>
-            <p className="mt-5 max-w-xl text-base leading-8 text-[#5b5755]">
+          </div>
+
+          <h1 className="font-display mt-8 text-[3rem] leading-[0.95] tracking-tight text-[#141413] md:mt-12 md:text-[5.5rem] lg:text-[7rem]">
+            اشتراک‌های
+            <br />
+            <span className="text-[#c2410c]">بین‌المللی</span>
+            <span className="text-[#5b5755]">،</span>
+            <br />
+            با بهترین قیمت بازار
+            <span className="text-[#c2410c]">.</span>
+          </h1>
+
+          <div className="mt-10 grid grid-cols-1 items-end gap-6 lg:grid-cols-12">
+            <p className="max-w-2xl text-base leading-8 text-[#5b5755] lg:col-span-7">
               بیش از {toPersianDigits(totalServices.toLocaleString('en-US'))} سرویس فعال در{' '}
               {toPersianDigits(categories.length)} دسته‌بندی — تحویل آنی، ضمانت اصالت
               و پرداخت امن، بدون واسطه.
             </p>
-            <div className="mt-7 flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3 lg:col-span-5 lg:justify-end">
+              <button
+                type="button"
+                onClick={() => onNavigate('/c/ai-assistants')}
+                className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-medium text-[#141413] ring-1 ring-[#e8e6e0] transition-colors hover:ring-[#141413]"
+              >
+                <Sparkles size={14} />
+                هوش مصنوعی
+              </button>
               <button
                 type="button"
                 onClick={() => onNavigate('/categories')}
@@ -55,87 +70,67 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 مشاهده دسته‌بندی‌ها
                 <ArrowLeft size={14} />
               </button>
-              <button
-                type="button"
-                onClick={() => onNavigate('/c/ai-assistants')}
-                className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium text-[#141413] ring-1 ring-[#e8e6e0] transition-colors hover:ring-[#141413]"
-              >
-                <Sparkles size={14} />
-                هوش مصنوعی
-              </button>
             </div>
           </div>
+        </div>
 
-          <div
-            onClick={() => onNavigate('/categories')}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => e.key === 'Enter' && onNavigate('/categories')}
-            className="lg:col-span-5 lg:order-2 order-1 group relative cursor-pointer overflow-hidden rounded-[12px] ring-1 ring-[#e8e6e0]"
-            style={{ aspectRatio: '4 / 5' }}
-          >
-            <img
-              src="/images/home/hero-premium.jpg"
-              alt=""
-              aria-hidden
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-            />
+        <div className="relative isolate aspect-[16/8] md:aspect-[16/6] overflow-hidden bg-[#f5f3ed]">
+          <img
+            src="/images/home/hero-premium.jpg"
+            alt=""
+            aria-hidden
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute right-4 bottom-4 md:right-8 md:bottom-8 inline-flex items-center gap-2 rounded-full bg-[#faf9f5]/95 pl-3 pr-2 py-1 text-[11px] font-medium text-[#141413] ring-1 ring-[#e8e6e0]">
+            <span className="block h-1.5 w-1.5 rounded-full bg-[#c2410c]" />
+            تخفیف نوروزی فعال — تا ۳۰٪
           </div>
         </div>
       </section>
 
-      {/* top category strip */}
-      <section className="max-w-7xl mx-auto px-4 pt-10 pb-2">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {topCategories.map((c) => {
-            const Icon = iconFor(c.icon)
-            const image = imageForCategory(c.slug)
-            return (
+      {/* category index — magazine table of contents, horizontally scrollable, single line of pills */}
+      <section className="bg-[#f5f3ed] border-b border-[#e8e6e0]">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.22em] text-[#5b5755]">
+            <span>کاوش بر اساس دسته‌بندی</span>
+            <span className="flex-1 h-px bg-[#dad7d0]" />
+            <span className="tabular-nums">{toPersianDigits(categories.length)} دسته</span>
+          </div>
+          <div className="-mx-1 mt-3 flex items-center gap-2 overflow-x-auto pb-1 px-1">
+            {categories.map((c, i) => (
               <button
                 key={c.id}
                 type="button"
                 onClick={() => onNavigate('/c/' + c.slug)}
-                className="group flex flex-col overflow-hidden rounded-[12px] bg-[#ffffff] text-right ring-1 ring-[#e8e6e0] transition-[transform,box-shadow] duration-200 hover:-translate-y-[1px] hover:ring-[#dad7d0] focus:outline-none focus:ring-2 focus:ring-[#c2410c]/30"
+                className="group inline-flex shrink-0 items-center gap-2 rounded-full bg-[#ffffff] px-4 py-2 text-sm text-[#141413] ring-1 ring-[#e8e6e0] transition-colors hover:bg-[#141413] hover:text-[#faf9f5] hover:ring-[#141413] focus:outline-none focus:ring-2 focus:ring-[#c2410c]/40"
               >
-                <div className="relative aspect-[16/10] overflow-hidden bg-[#f5f3ed]">
-                  <img
-                    src={image}
-                    alt={c.titleFa}
-                    loading="lazy"
-                    className="absolute inset-0 h-full w-full object-cover"
-                  />
-                </div>
-                <div className="flex items-center gap-3 p-4">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#faf9f5] ring-1 ring-[#e8e6e0]">
-                    <Icon size={14} className="text-[#5b5755]" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <span className="block truncate font-display text-base text-[#141413]">
-                      {c.titleFa}
-                    </span>
-                    <span className="block text-[11px] text-[#5b5755]">
-                      {toPersianDigits(getCategoryServiceCount(c.id))} سرویس
-                    </span>
-                  </div>
-                </div>
+                <span className="text-[10px] tabular-nums text-[#8e8a85] group-hover:text-[#dad7d0]">
+                  {toPersianDigits(String(i + 1).padStart(2, '0'))}
+                </span>
+                <span className="whitespace-nowrap font-display">{c.titleFa}</span>
+                <span className="text-[10px] tabular-nums text-[#8e8a85] group-hover:text-[#dad7d0]">
+                  {toPersianDigits(getCategoryServiceCount(c.id))}
+                </span>
               </button>
-            )
-          })}
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* trust strip — typographic line, not multicolored icon chips */}
-      <section className="max-w-7xl mx-auto px-4 py-10">
-        <div className="hairline mb-8" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6">
+      {/* trust strip — numbered editorial columns with serif numerals on top rule */}
+      <section className="max-w-7xl mx-auto px-4 py-12 md:py-16">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-10 lg:grid-cols-4">
           {[
-            { label: 'تحویل آنی', desc: 'دریافت در کمتر از ۳۰ ثانیه' },
-            { label: 'ضمانت اصالت', desc: 'کدها و اکانت‌های اورجینال' },
-            { label: 'پشتیبانی ۲۴/۷', desc: 'پاسخگویی شبانه‌روزی' },
-            { label: 'پرداخت امن', desc: 'درگاه بانکی معتبر' },
+            { num: '۰۱', label: 'تحویل آنی', desc: 'دریافت در کمتر از ۳۰ ثانیه' },
+            { num: '۰۲', label: 'ضمانت اصالت', desc: 'کدها و اکانت‌های اورجینال' },
+            { num: '۰۳', label: 'پشتیبانی ۲۴/۷', desc: 'پاسخگویی شبانه‌روزی' },
+            { num: '۰۴', label: 'پرداخت امن', desc: 'درگاه بانکی معتبر' },
           ].map((it) => (
-            <div key={it.label} className="border-r border-[#e8e6e0] pr-4">
-              <div className="font-display text-lg leading-snug text-[#141413]">
+            <div key={it.num} className="border-t border-[#141413] pt-4">
+              <div className="font-display text-3xl tabular-nums text-[#c2410c]">
+                {it.num}
+              </div>
+              <div className="font-display mt-3 text-lg leading-snug text-[#141413]">
                 {it.label}
               </div>
               <div className="mt-1 text-[12px] leading-6 text-[#5b5755]">
@@ -144,7 +139,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
             </div>
           ))}
         </div>
-        <div className="hairline mt-8" />
       </section>
 
       {/* featured */}
