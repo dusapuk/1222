@@ -1,5 +1,4 @@
 #root {
-  max-width: none;
   width: 100%;
   margin: 0;
   padding: 0;
@@ -13,31 +12,6 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Vazirmatn', sans-serif;
-  background: #0b0c10;
-  color: #e8e8ed;
   direction: rtl;
   overflow-x: hidden;
-}
-
-::selection {
-  background: #d4a853;
-  color: #0b0c10;
-}
-
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #13141a;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #2a2b35;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #d4a853;
 }
