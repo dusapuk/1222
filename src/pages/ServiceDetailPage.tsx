@@ -30,7 +30,7 @@ import { Breadcrumbs } from '../components/Breadcrumbs'
 import { formatToman, toPersianDigits } from '../lib/format'
 import { iconFor, colorForCategory } from '../lib/icons'
 import { useSEO } from '../hooks/useSEO'
-import { breadcrumbLd, productLd } from '../lib/jsonld'
+import { seoForService, seoForServiceNotFound } from '../lib/seoConfig'
 
 const FALLBACK = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%231a1b26"/><circle cx="32" cy="26" r="9" fill="%23505162"/><path d="M14 56c0-9.94 8.06-18 18-18s18 8.06 18 18" fill="%23505162"/></svg>'
 
@@ -68,37 +68,13 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
 
   useSEO(
     service
-      ? {
-          title: `خرید ${service.titleFa}${service.titleEn ? ` - ${service.titleEn}` : ''}`,
-          description:
-            service.shortDescriptionFa?.replace(/\s+/g, ' ').trim() ||
-            `خرید ${service.titleFa}${category ? ' در دسته ' + category.titleFa : ''} با تحویل آنی، ضمانت اصالت و پشتیبانی فارسی در پی‌کارت.`,
-          path: `/s/${slug}`,
-          image: service.logoUrl,
-          ogType: 'product',
-          jsonLd: [
-            breadcrumbLd([
-              { name: 'دسته‌بندی‌ها', path: '/categories' },
-              ...(category
-                ? [{ name: category.titleFa, path: `/c/${category.slug}` }]
-                : []),
-              { name: service.titleFa, path: `/s/${slug}` },
-            ]),
-            productLd({
-              service,
-              category,
-              plans: servicePlans,
-              cheapest: cheapestPlan,
-              path: `/s/${slug}`,
-            }),
-          ],
-        }
-      : {
-          title: 'سرویس پیدا نشد',
-          description: 'سرویس مورد نظر در پی‌کارت پیدا نشد.',
-          path: `/s/${slug}`,
-          noindex: true,
-        },
+      ? seoForService({
+          service,
+          category,
+          plans: servicePlans,
+          cheapest: cheapestPlan,
+        })
+      : seoForServiceNotFound(slug),
   )
 
   if (!service) {

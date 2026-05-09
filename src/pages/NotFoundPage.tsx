@@ -1,16 +1,14 @@
 import { useSEO } from '../hooks/useSEO'
+import { seoForNotFound } from '../lib/seoConfig'
 
 export type NotFoundPageProps = {
   onNavigate: (path: string, params?: Record<string, string | number | null | undefined>) => void
 }
 
 export function NotFoundPage({ onNavigate }: NotFoundPageProps) {
-  useSEO({
-    title: 'صفحه پیدا نشد',
-    description: 'صفحه مورد نظر شما در پی‌کارت پیدا نشد. به صفحه اصلی یا دسته‌بندی‌ها بازگردید.',
-    path: typeof window !== 'undefined' ? window.location.pathname : '/404',
-    noindex: true,
-  })
+  useSEO(
+    seoForNotFound(typeof window !== 'undefined' ? window.location.pathname : '/404'),
+  )
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-24 text-center">

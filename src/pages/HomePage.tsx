@@ -25,7 +25,7 @@ import { CategoryCard } from '../components/CategoryCard'
 import { iconFor, colorForCategory, imageForCategory } from '../lib/icons'
 import { toPersianDigits } from '../lib/format'
 import { useSEO } from '../hooks/useSEO'
-import { organizationLd, websiteLd, breadcrumbLd } from '../lib/jsonld'
+import { seoForHome } from '../lib/seoConfig'
 
 export type HomePageProps = {
   onNavigate: (path: string, params?: Record<string, string | number | null | undefined>) => void
@@ -37,14 +37,12 @@ export function HomePage({ onNavigate }: HomePageProps) {
   const topCategories = categories.slice(0, 4)
   const totalServices = services.length
 
-  useSEO({
-    rawTitle: true,
-    title: 'پی‌کارت | خرید اشتراک‌ها و سرویس‌های دیجیتال با تحویل آنی',
-    description: `بزرگ‌ترین مارکت‌پلیس خرید اکانت‌های پرمیوم، گیفت‌کارت، اشتراک‌های بین‌المللی و سرویس‌های هوش مصنوعی در ایران. بیش از ${totalServices.toLocaleString('en-US')} سرویس فعال در ${categories.length} دسته‌بندی، تحویل آنی، ضمانت اصالت و پشتیبانی ۲۴ ساعته.`,
-    path: '/',
-    image: '/images/home/hero-premium.jpg',
-    jsonLd: [organizationLd(), websiteLd(), breadcrumbLd([])],
-  })
+  useSEO(
+    seoForHome({
+      categoryCount: categories.length,
+      serviceCount: totalServices,
+    }),
+  )
 
   return (
     <>

@@ -18,7 +18,7 @@ import { Breadcrumbs } from '../components/Breadcrumbs'
 import { iconFor, colorForCategory, imageForCategory } from '../lib/icons'
 import { toPersianDigits } from '../lib/format'
 import { useSEO } from '../hooks/useSEO'
-import { breadcrumbLd, collectionPageLd, itemListLd } from '../lib/jsonld'
+import { seoForCategory, seoForCategoryNotFound } from '../lib/seoConfig'
 
 export type CategoryPageProps = {
   slug: string
@@ -99,35 +99,15 @@ export function CategoryPage({
   const safePage = Math.min(page, pageCount)
   const visible = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
-  const seoPath = `/c/${slug}` + (safePage > 1 ? `?page=${safePage}` : '')
   useSEO(
     category
-      ? {
-          title: `خرید ${category.titleFa} با بهترین قیمت`,
-          description:
-            category.description?.replace(/\s+/g, ' ').trim() ||
-            `${toPersianDigits(all.length)} سرویس فعال در دسته ${category.titleFa} — تحویل آنی، ضمانت اصالت و پشتیبانی فارسی در پی‌کارت.`,
-          path: seoPath,
-          image: imageForCategory(slug),
-          jsonLd: [
-            breadcrumbLd([
-              { name: 'دسته‌بندی‌ها', path: '/categories' },
-              { name: category.titleFa, path: `/c/${slug}` },
-            ]),
-            collectionPageLd({
-              category,
-              count: all.length,
-              path: `/c/${slug}`,
-            }),
-            itemListLd(visible, `/c/${slug}`),
-          ],
-        }
-      : {
-          title: 'دسته‌بندی پیدا نشد',
-          description: 'دسته‌بندی مورد نظر در پی‌کارت پیدا نشد.',
-          path: `/c/${slug}`,
-          noindex: true,
-        },
+      ? seoForCategory({
+          category,
+          services: visible.length > 0 ? visible : all,
+          categoryImage: imageForCategory(slug),
+          page: safePage,
+        })
+      : seoForCategoryNotFound(slug),
   )
 
   if (!category) {
