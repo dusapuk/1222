@@ -13,6 +13,8 @@ import { SortSelect } from '../components/SortSelect'
 import { Pagination } from '../components/Pagination'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { toPersianDigits } from '../lib/format'
+import { useSEO } from '../hooks/useSEO'
+import { seoForSearch } from '../lib/seoConfig'
 
 const PAGE_SIZE = 24
 
@@ -60,6 +62,10 @@ export function SearchPage({
   const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
   const safePage = Math.min(page, pageCount)
   const visible = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
+  useSEO(
+    seoForSearch({ query: localQuery, resultCount: filtered.length }),
+  )
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-5">

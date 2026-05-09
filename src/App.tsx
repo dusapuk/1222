@@ -1,6 +1,5 @@
-import { useEffect } from 'react'
 import './App.css'
-import { useHashRoute } from './hooks/useHashRoute'
+import { useRoute } from './hooks/useRoute'
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'
 import { HomePage } from './pages/HomePage'
@@ -8,6 +7,7 @@ import { CategoriesPage } from './pages/CategoriesPage'
 import { CategoryPage } from './pages/CategoryPage'
 import { SearchPage } from './pages/SearchPage'
 import { ServiceDetailPage } from './pages/ServiceDetailPage'
+import { NotFoundPage } from './pages/NotFoundPage'
 import type { SortKey } from './lib/data'
 
 function parseSort(value: string | null): SortKey {
@@ -30,14 +30,14 @@ function parseNumOrNull(v: string | null): number | null {
 }
 
 function App() {
-  const { route, navigate, setParams } = useHashRoute()
-
-  useEffect(() => {
-    document.title = 'پی‌کارت | مارکت پلیس سرویس‌های دیجیتال'
-  }, [route.path])
+  const { route, navigate, setParams } = useRoute()
 
   const renderRoute = () => {
     const path = route.path
+
+    if (path === '/' || path === '') {
+      return <HomePage onNavigate={navigate} />
+    }
 
     if (path.startsWith('/c/')) {
       const slug = decodeURIComponent(path.slice(3))
@@ -83,7 +83,7 @@ function App() {
       )
     }
 
-    return <HomePage onNavigate={navigate} />
+    return <NotFoundPage onNavigate={navigate} />
   }
 
   return (

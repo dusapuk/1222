@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   ShoppingCart,
   Heart,
@@ -22,13 +22,17 @@ import {
   getDiscountPct,
   getPlansByService,
   getPlanDiscountPct,
+  loadServiceDetail,
   type Plan,
   type Service,
+  type ServiceDetail,
 } from '../lib/data'
 import { ProductCard } from '../components/ProductCard'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { formatToman, toPersianDigits } from '../lib/format'
 import { iconFor, colorForCategory } from '../lib/icons'
+import { useSEO } from '../hooks/useSEO'
+import { seoForService, seoForServiceNotFound } from '../lib/seoConfig'
 
 const FALLBACK = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%231a1b26"/><circle cx="32" cy="26" r="9" fill="%23505162"/><path d="M14 56c0-9.94 8.06-18 18-18s18 8.06 18 18" fill="%23505162"/></svg>'
 
@@ -64,6 +68,36 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
       .slice(0, 4)
   }, [service])
 
+  // Lazy-loaded long description, FAQ and SEO overrides for THIS slug.
+  // Kept as a separate fetch from the main catalogue so browse pages
+  // don't pay for it.
+  const [detail, setDetail] = useState<ServiceDetail | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    if (!service) {
+      setDetail(null)
+      return
+    }
+    loadServiceDetail(service.slug).then((d) => {
+      if (!cancelled) setDetail(d)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [service])
+
+  useSEO(
+    service
+      ? seoForService({
+          service,
+          category,
+          plans: servicePlans,
+          cheapest: cheapestPlan,
+          detail,
+        })
+      : seoForServiceNotFound(slug),
+  )
+
   if (!service) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
@@ -98,23 +132,30 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
         {/* main info */}
         <div className="lg:col-span-7">
           <div className="bg-[#13141a] border border-[#1e1f2a] rounded-2xl overflow-hidden">
-            <div className="relative aspect-[5/3] bg-gradient-to-br from-[#1a1b26] to-[#0e0f15] overflow-hidden">
-              <img
-                src={service.logoUrl ?? FALLBACK}
-                alt={service.titleFa}
-                className="absolute inset-0 w-full h-full object-cover"
-                onError={(e) => {
-                  ;(e.currentTarget as HTMLImageElement).src = FALLBACK
-                }}
-              />
-              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0b0c10]/80 to-transparent pointer-events-none" />
+            <div className="mx-auto w-full max-w-[460px] sm:max-w-[520px] md:max-w-[560px] p-3 sm:p-4">
+              <div className="relative aspect-square bg-gradient-to-br from-[#1a1b26] to-[#0e0f15] overflow-hidden rounded-xl ring-1 ring-[#1e1f2a]">
+                <img
+                  src={service.logoUrl ?? FALLBACK}
+                  alt={`خرید ${service.titleFa}${service.titleEn ? ' – ' + service.titleEn : ''}`}
+                  width={560}
+                  height={560}
+                  fetchPriority="high"
+                  decoding="async"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  onError={(e) => {
+                    ;(e.currentTarget as HTMLImageElement).src = FALLBACK
+                  }}
+                />
+                <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-[#0b0c10]/70 to-transparent pointer-events-none" />
+              </div>
             </div>
           </div>
 
           <div className="mt-5 bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-6">
             <h2 className="text-lg font-black text-white mb-3">درباره {service.titleFa}</h2>
             <p className="text-sm text-[#9a9baa] leading-7 whitespace-pre-line">
-              {service.shortDescriptionFa ??
+              {detail?.descriptionFa ??
+                service.shortDescriptionFa ??
                 'این سرویس به صورت رسمی ارائه می‌شود. تمام پلن‌ها در همین صفحه قابل مقایسه است و سفارش‌ها در کمتر از چند ساعت تحویل داده می‌شود.'}
             </p>
 
@@ -144,6 +185,29 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
               })}
             </div>
           </div>
+
+          {detail?.faq && detail.faq.length > 0 && (
+            <div className="mt-5 bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-6">
+              <h2 className="text-lg font-black text-white mb-4">
+                سوالات متداول درباره {service.titleFa}
+              </h2>
+              <ul className="space-y-3">
+                {detail.faq.map((qa, i) => (
+                  <li
+                    key={i}
+                    className="bg-[#0e0f15] border border-[#1e1f2a] rounded-xl p-4"
+                  >
+                    <h3 className="text-sm font-bold text-white mb-2">
+                      {qa.question}
+                    </h3>
+                    <p className="text-xs text-[#9a9baa] leading-7 whitespace-pre-line">
+                      {qa.answer}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* purchase card */}
@@ -170,7 +234,7 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
                   </button>
                 )}
                 <h1 className="text-lg font-black text-white leading-tight line-clamp-2">
-                  {service.titleFa}
+                  خرید {service.titleFa}
                 </h1>
                 {service.titleEn && (
                   <p className="text-xs text-[#6b6c78] mt-0.5" dir="ltr">

@@ -4,6 +4,8 @@ import { ProductCard } from '../components/ProductCard'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { toPersianDigits } from '../lib/format'
 import { Layers } from 'lucide-react'
+import { useSEO } from '../hooks/useSEO'
+import { seoForCategoriesIndex } from '../lib/seoConfig'
 
 export type CategoriesPageProps = {
   onNavigate: (path: string, params?: Record<string, string | number | null | undefined>) => void
@@ -12,6 +14,14 @@ export type CategoriesPageProps = {
 export function CategoriesPage({ onNavigate }: CategoriesPageProps) {
   const featured = getFeaturedServices(8)
   const totalServices = services.length
+
+  useSEO(
+    seoForCategoriesIndex({
+      categoryCount: categories.length,
+      serviceCount: totalServices,
+      categories,
+    }),
+  )
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">

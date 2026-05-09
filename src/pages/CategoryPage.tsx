@@ -17,6 +17,8 @@ import { Pagination } from '../components/Pagination'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { iconFor, colorForCategory, imageForCategory } from '../lib/icons'
 import { toPersianDigits } from '../lib/format'
+import { useSEO } from '../hooks/useSEO'
+import { seoForCategory, seoForCategoryNotFound } from '../lib/seoConfig'
 
 export type CategoryPageProps = {
   slug: string
@@ -97,6 +99,17 @@ export function CategoryPage({
   const safePage = Math.min(page, pageCount)
   const visible = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
+  useSEO(
+    category
+      ? seoForCategory({
+          category,
+          services: visible.length > 0 ? visible : all,
+          categoryImage: imageForCategory(slug),
+          page: safePage,
+        })
+      : seoForCategoryNotFound(slug),
+  )
+
   if (!category) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
@@ -126,60 +139,59 @@ export function CategoryPage({
         onNavigate={onNavigate}
       />
 
-      <header
-        className="relative mt-5 mb-6 overflow-hidden rounded-2xl ring-1 ring-[#1e1f2a]"
-        style={{ minHeight: 220 }}
-      >
-        <img
-          src={image}
-          alt={category.titleFa}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div
-          aria-hidden
-          className="absolute inset-0 mix-blend-multiply"
-          style={{ background: `linear-gradient(135deg, ${color}40 0%, #0b0c10cc 100%)` }}
-        />
-        <div
-          aria-hidden
-          className="absolute inset-x-0 bottom-0 h-3/4"
-          style={{
-            background:
-              'linear-gradient(to top, rgba(8,9,14,0.96) 0%, rgba(8,9,14,0.7) 35%, rgba(8,9,14,0.18) 75%, rgba(8,9,14,0) 100%)',
-          }}
-        />
-        <div className="relative flex flex-col gap-4 p-5 md:flex-row md:items-end md:justify-between md:p-7">
-          <div className="flex items-center gap-3">
+      <header className="relative mt-5 mb-6 overflow-hidden rounded-2xl ring-1 ring-[#1e1f2a] bg-[#0e0f15]">
+        {/* Mobile: full-bleed banner with overlay text (image keeps its native aspect) */}
+        <div className="relative md:hidden">
+          <div className="relative aspect-[16/9] overflow-hidden">
+            <img
+              src={image}
+              alt={category.titleFa}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
             <div
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl backdrop-blur-md"
+              aria-hidden
+              className="absolute inset-0 mix-blend-multiply"
+              style={{ background: `linear-gradient(135deg, ${color}40 0%, #0b0c10cc 100%)` }}
+            />
+            <div
+              aria-hidden
+              className="absolute inset-x-0 bottom-0 h-3/4"
               style={{
-                background: `${color}30`,
-                border: `1px solid ${color}66`,
-                boxShadow: `0 6px 22px -8px ${color}aa`,
+                background:
+                  'linear-gradient(to top, rgba(8,9,14,0.96) 0%, rgba(8,9,14,0.7) 35%, rgba(8,9,14,0.18) 75%, rgba(8,9,14,0) 100%)',
               }}
-            >
-              <Icon size={22} style={{ color }} />
-            </div>
-            <div>
-              {category.titleEn && (
-                <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">
-                  {category.titleEn}
-                </span>
-              )}
-              <h1 className="text-2xl font-black leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] md:text-3xl">
-                {category.titleFa}
-              </h1>
-              <p className="mt-1 line-clamp-1 text-xs text-white/70">
-                {category.description ?? `${toPersianDigits(all.length)} سرویس`}
-              </p>
+            />
+            <div className="absolute inset-x-0 bottom-0 flex items-end gap-3 p-5">
+              <div
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl backdrop-blur-md"
+                style={{
+                  background: `${color}30`,
+                  border: `1px solid ${color}66`,
+                  boxShadow: `0 6px 22px -8px ${color}aa`,
+                }}
+              >
+                <Icon size={22} style={{ color }} />
+              </div>
+              <div className="min-w-0">
+                {category.titleEn && (
+                  <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">
+                    {category.titleEn}
+                  </span>
+                )}
+                <h1 className="text-2xl font-black leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+                  خرید {category.titleFa}
+                </h1>
+                <p className="mt-1 line-clamp-1 text-xs text-white/70">
+                  {category.description ?? `${toPersianDigits(all.length)} سرویس`}
+                </p>
+              </div>
             </div>
           </div>
-
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 p-4 border-t border-[#1e1f2a]">
             <span
-              className="rounded-xl px-3 py-2 text-xs font-bold backdrop-blur-md"
+              className="rounded-xl px-3 py-2 text-xs font-bold"
               style={{
-                background: `${color}26`,
+                background: `${color}1f`,
                 color,
                 border: `1px solid ${color}55`,
               }}
@@ -190,11 +202,87 @@ export function CategoryPage({
             <button
               type="button"
               onClick={() => setDrawerOpen(true)}
-              className="lg:hidden flex items-center gap-2 bg-[#13141a]/80 backdrop-blur-md border border-[#252630] hover:border-[#d4a853]/40 text-sm text-white rounded-xl h-10 px-4 transition-colors"
+              className="lg:hidden flex items-center gap-2 bg-[#13141a] border border-[#252630] hover:border-[#d4a853]/40 text-sm text-white rounded-xl h-10 px-4 transition-colors"
             >
               <SlidersHorizontal size={14} />
               فیلترها
             </button>
+          </div>
+        </div>
+
+        {/* Desktop: split layout with image card on the right at its native aspect */}
+        <div className="hidden md:grid md:grid-cols-12 md:items-stretch">
+          <div className="md:col-span-7 lg:col-span-8 flex flex-col justify-between gap-5 p-7">
+            <div className="flex items-center gap-3">
+              <div
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
+                style={{
+                  background: `${color}26`,
+                  border: `1px solid ${color}55`,
+                  boxShadow: `0 6px 22px -8px ${color}88`,
+                }}
+              >
+                <Icon size={22} style={{ color }} />
+              </div>
+              <div className="min-w-0">
+                {category.titleEn && (
+                  <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">
+                    {category.titleEn}
+                  </span>
+                )}
+                <h1 className="text-2xl font-black leading-tight text-white md:text-3xl">
+                  خرید {category.titleFa}
+                </h1>
+                <p className="mt-1 line-clamp-2 text-xs text-white/70">
+                  {category.description ?? `${toPersianDigits(all.length)} سرویس`}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className="rounded-xl px-3 py-2 text-xs font-bold"
+                style={{
+                  background: `${color}1f`,
+                  color,
+                  border: `1px solid ${color}55`,
+                }}
+              >
+                {toPersianDigits(filtered.length)} از {toPersianDigits(all.length)} سرویس
+              </span>
+              <SortSelect value={sort} onChange={setSort} />
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(true)}
+                className="lg:hidden flex items-center gap-2 bg-[#13141a] border border-[#252630] hover:border-[#d4a853]/40 text-sm text-white rounded-xl h-10 px-4 transition-colors"
+              >
+                <SlidersHorizontal size={14} />
+                فیلترها
+              </button>
+            </div>
+          </div>
+
+          <div className="relative md:col-span-5 lg:col-span-4 overflow-hidden bg-[#0b0c10]">
+            <div className="relative h-full w-full aspect-[4/3] md:aspect-auto md:min-h-[220px]">
+              <img
+                src={image}
+                alt={category.titleFa}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div
+                aria-hidden
+                className="absolute inset-0 mix-blend-multiply"
+                style={{ background: `linear-gradient(225deg, ${color}33 0%, transparent 60%)` }}
+              />
+              <div
+                aria-hidden
+                className="absolute inset-y-0 right-0 w-1/3"
+                style={{
+                  background:
+                    'linear-gradient(to left, rgba(14,15,21,0.85) 0%, rgba(14,15,21,0) 100%)',
+                }}
+              />
+            </div>
           </div>
         </div>
       </header>
