@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   ShoppingCart,
   Heart,
@@ -22,8 +22,10 @@ import {
   getDiscountPct,
   getPlansByService,
   getPlanDiscountPct,
+  loadServiceDetail,
   type Plan,
   type Service,
+  type ServiceDetail,
 } from '../lib/data'
 import { ProductCard } from '../components/ProductCard'
 import { Breadcrumbs } from '../components/Breadcrumbs'
@@ -66,6 +68,24 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
       .slice(0, 4)
   }, [service])
 
+  // Lazy-loaded long description, FAQ and SEO overrides for THIS slug.
+  // Kept as a separate fetch from the main catalogue so browse pages
+  // don't pay for it.
+  const [detail, setDetail] = useState<ServiceDetail | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    if (!service) {
+      setDetail(null)
+      return
+    }
+    loadServiceDetail(service.slug).then((d) => {
+      if (!cancelled) setDetail(d)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [service])
+
   useSEO(
     service
       ? seoForService({
@@ -73,6 +93,7 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
           category,
           plans: servicePlans,
           cheapest: cheapestPlan,
+          detail,
         })
       : seoForServiceNotFound(slug),
   )
@@ -133,7 +154,8 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
           <div className="mt-5 bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-6">
             <h2 className="text-lg font-black text-white mb-3">درباره {service.titleFa}</h2>
             <p className="text-sm text-[#9a9baa] leading-7 whitespace-pre-line">
-              {service.shortDescriptionFa ??
+              {detail?.descriptionFa ??
+                service.shortDescriptionFa ??
                 'این سرویس به صورت رسمی ارائه می‌شود. تمام پلن‌ها در همین صفحه قابل مقایسه است و سفارش‌ها در کمتر از چند ساعت تحویل داده می‌شود.'}
             </p>
 
@@ -163,6 +185,29 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
               })}
             </div>
           </div>
+
+          {detail?.faq && detail.faq.length > 0 && (
+            <div className="mt-5 bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-6">
+              <h2 className="text-lg font-black text-white mb-4">
+                سوالات متداول درباره {service.titleFa}
+              </h2>
+              <ul className="space-y-3">
+                {detail.faq.map((qa, i) => (
+                  <li
+                    key={i}
+                    className="bg-[#0e0f15] border border-[#1e1f2a] rounded-xl p-4"
+                  >
+                    <h3 className="text-sm font-bold text-white mb-2">
+                      {qa.question}
+                    </h3>
+                    <p className="text-xs text-[#9a9baa] leading-7 whitespace-pre-line">
+                      {qa.answer}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* purchase card */}

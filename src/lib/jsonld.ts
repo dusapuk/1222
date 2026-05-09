@@ -112,12 +112,15 @@ export function productLd(args: {
   plans: Plan[]
   cheapest: Plan | null
   path: string
+  /** Long marketing description (preferred for richer Product snippets). */
+  longDescription?: string | null
 }): Json {
-  const { service, category, plans, cheapest, path } = args
+  const { service, category, plans, cheapest, path, longDescription } = args
   const url = absoluteUrl(path)
 
   const description = clampDescription(
-    service.shortDescriptionFa ??
+    longDescription ??
+      service.shortDescriptionFa ??
       `خرید ${service.titleFa}${category ? ' در دسته ' + category.titleFa : ''} با تحویل سریع، پشتیبانی فارسی و ضمانت اصالت در پی‌کارت.`,
     300,
   )

@@ -42,7 +42,7 @@ import {
   absoluteUrl,
 } from '../src/lib/seo'
 import type { SEOConfig } from '../src/hooks/useSEO'
-import type { Category, Plan, Service } from '../src/lib/data'
+import type { Category, Plan, Service, ServiceDetail } from '../src/lib/data'
 
 // Hero image per category — inlined here to avoid pulling lucide-react
 // (and thus the JSX runtime) into the Node prerender script.
@@ -146,6 +146,18 @@ for (const category of marketplace.categories) {
   })
 }
 
+const servicesDir = resolve(repoRoot, 'public/data/services')
+
+function loadDetail(slug: string): ServiceDetail | null {
+  const path = resolve(servicesDir, `${slug}.json`)
+  if (!existsSync(path)) return null
+  try {
+    return JSON.parse(readFileSync(path, 'utf8')) as ServiceDetail
+  } catch {
+    return null
+  }
+}
+
 for (const service of marketplace.services) {
   if (!service.slug) continue
   const category = categoryById.get(service.categoryId)
@@ -153,10 +165,11 @@ for (const service of marketplace.services) {
   const cheapest = [...plans]
     .filter((p) => p.priceIrt != null && p.isActive)
     .sort((a, b) => (a.priceIrt ?? 0) - (b.priceIrt ?? 0))[0] ?? null
+  const detail = loadDetail(service.slug)
   routes.push({
     path: `/s/${service.slug}`,
     outFile: fileFor(`/s/${service.slug}`),
-    seo: seoForService({ service, category, plans, cheapest }),
+    seo: seoForService({ service, category, plans, cheapest, detail }),
   })
 }
 

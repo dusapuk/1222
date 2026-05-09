@@ -78,6 +78,21 @@ export type Marketplace = {
   plans: Plan[]
 }
 
+/**
+ * Rich per-service payload, fetched lazily from
+ * `/data/services/<slug>.json` when the user opens a product detail
+ * page. Kept out of the main catalogue to avoid bloating browse pages.
+ */
+export type ServiceDetail = {
+  slug: string
+  descriptionFa?: string | null
+  seoTitleFa?: string | null
+  seoDescriptionFa?: string | null
+  requirementsFa?: string | null
+  instructionsFa?: string | null
+  faq?: { question: string; answer: string }[] | null
+}
+
 // Mutable module-level stores. Empty until `initMarketplaceData()` runs.
 export let categories: Category[] = []
 export let services: Service[] = []
@@ -144,6 +159,23 @@ export function initMarketplaceData(): Promise<void> {
     })
     .then(setMarketplaceData)
   return pending
+}
+
+const serviceDetailCache = new Map<string, Promise<ServiceDetail | null>>()
+
+/**
+ * Fetch /data/services/<slug>.json. Cached forever — the file is static
+ * and per-build. On 404 / network failure we resolve to null so callers
+ * can render the basic page without rich data.
+ */
+export function loadServiceDetail(slug: string): Promise<ServiceDetail | null> {
+  const cached = serviceDetailCache.get(slug)
+  if (cached) return cached
+  const p = fetch(`/data/services/${encodeURIComponent(slug)}.json`)
+    .then((r) => (r.ok ? (r.json() as Promise<ServiceDetail>) : null))
+    .catch(() => null)
+  serviceDetailCache.set(slug, p)
+  return p
 }
 
 export function getCategoryBySlug(slug: string): Category | undefined {

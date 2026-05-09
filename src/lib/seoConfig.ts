@@ -9,12 +9,13 @@
  * Keeping the logic in one place ensures the static HTML and the runtime
  * DOM never drift apart.
  */
-import type { Category, Plan, Service } from './data'
+import type { Category, Plan, Service, ServiceDetail } from './data'
 import type { SEOConfig } from '../hooks/useSEO'
 import { clampDescription } from './seo'
 import {
   breadcrumbLd,
   collectionPageLd,
+  faqLd,
   itemListLd,
   organizationLd,
   productLd,
@@ -113,28 +114,55 @@ export function seoForService(args: {
   category?: Category
   plans: Plan[]
   cheapest: Plan | null
+  detail?: ServiceDetail | null
 }): SEOConfig {
-  const { service, category, plans, cheapest } = args
+  const { service, category, plans, cheapest, detail } = args
   const path = `/s/${service.slug}`
+
+  // SEO-overridden title/description from the original CMS — fall back
+  // to a generated "خرید {service}" line if the service has no override.
+  const fallbackTitle = `خرید ${service.titleFa}${service.titleEn ? ` - ${service.titleEn}` : ''}`
+  const titleRaw = detail?.seoTitleFa?.trim() || fallbackTitle
+  const fallbackDescription =
+    service.shortDescriptionFa ||
+    `خرید ${service.titleFa}${category ? ' در دسته ' + category.titleFa : ''} با تحویل آنی، ضمانت اصالت و پشتیبانی فارسی در پی‌کارت.`
+  const description = clampDescription(
+    detail?.seoDescriptionFa?.trim() || fallbackDescription,
+  )
+
+  const productJsonLd = productLd({
+    service,
+    category,
+    plans,
+    cheapest,
+    path,
+    longDescription: detail?.descriptionFa,
+  })
+
+  const jsonLd: Record<string, unknown>[] = [
+    breadcrumbLd([
+      { name: 'دسته‌بندی‌ها', path: '/categories' },
+      ...(category
+        ? [{ name: category.titleFa, path: `/c/${category.slug}` }]
+        : []),
+      { name: service.titleFa, path },
+    ]),
+    productJsonLd,
+  ]
+
+  if (detail?.faq && detail.faq.length > 0) {
+    const fp = faqLd(detail.faq)
+    if (fp) jsonLd.push(fp)
+  }
+
   return {
-    title: `خرید ${service.titleFa}${service.titleEn ? ` - ${service.titleEn}` : ''}`,
-    description: clampDescription(
-      service.shortDescriptionFa ||
-        `خرید ${service.titleFa}${category ? ' در دسته ' + category.titleFa : ''} با تحویل آنی، ضمانت اصالت و پشتیبانی فارسی در پی‌کارت.`,
-    ),
+    rawTitle: !!detail?.seoTitleFa,
+    title: titleRaw,
+    description,
     path,
     image: service.logoUrl,
     ogType: 'product',
-    jsonLd: [
-      breadcrumbLd([
-        { name: 'دسته‌بندی‌ها', path: '/categories' },
-        ...(category
-          ? [{ name: category.titleFa, path: `/c/${category.slug}` }]
-          : []),
-        { name: service.titleFa, path },
-      ]),
-      productLd({ service, category, plans, cheapest, path }),
-    ],
+    jsonLd,
   }
 }
 

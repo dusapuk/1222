@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node scripts/generate-sitemap.mjs",
+    "prebuild": "node scripts/generate-sitemap.mjs && tsx scripts/enrich-marketplace.ts",
     "build": "tsc -b && vite build && tsx scripts/prerender.ts",
-    "predev": "node scripts/generate-sitemap.mjs",
+    "predev": "node scripts/generate-sitemap.mjs && tsx scripts/enrich-marketplace.ts",
     "lint": "eslint .",
     "preview": "vite preview",
     "sitemap": "node scripts/generate-sitemap.mjs",
+    "enrich": "tsx scripts/enrich-marketplace.ts",
     "prerender": "tsx scripts/prerender.ts"
   },
   "dependencies": {
