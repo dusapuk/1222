@@ -69,10 +69,10 @@ export function SearchBox({ onNavigate, placeholder, className }: SearchBoxProps
             }
           }}
           placeholder={placeholder ?? 'جستجوی سرویس، گیفت کارت، اشتراک...'}
-          className="w-full bg-[#16171f] border border-[#252630] rounded-xl h-11 pr-11 pl-10 text-sm text-[#e8e8ed] placeholder-[#505162] outline-none focus:border-[#d4a853] transition-colors"
+          className="h-11 w-full rounded-full bg-[#ffffff] pl-10 pr-11 text-sm text-[#141413] placeholder-[#a8a39d] outline-none ring-1 ring-[#e8e6e0] transition-shadow focus:ring-[#141413]"
           aria-label="جستجو"
         />
-        <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#505162]" size={18} />
+        <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8e8a85]" size={16} />
         {value && (
           <button
             type="button"
@@ -81,7 +81,7 @@ export function SearchBox({ onNavigate, placeholder, className }: SearchBoxProps
               setValue('')
               setActiveIdx(-1)
             }}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#505162] hover:text-white transition-colors"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8e8a85] transition-colors hover:text-[#141413]"
           >
             <X size={16} />
           </button>
@@ -89,9 +89,9 @@ export function SearchBox({ onNavigate, placeholder, className }: SearchBoxProps
       </div>
 
       {open && value.trim().length >= 2 && (
-        <div className="absolute right-0 left-0 top-full mt-2 bg-[#13141a] border border-[#252630] rounded-xl shadow-2xl shadow-black/40 overflow-hidden z-50">
+        <div className="absolute right-0 left-0 top-full mt-2 z-50 overflow-hidden rounded-[12px] bg-[#ffffff] ring-1 ring-[#e8e6e0]">
           {suggestions.length === 0 ? (
-            <div className="px-4 py-3 text-xs text-[#6b6c78]">نتیجه‌ای یافت نشد</div>
+            <div className="px-4 py-3 text-xs text-[#5b5755]">نتیجه‌ای یافت نشد</div>
           ) : (
             <ul role="listbox" className="max-h-[60vh] overflow-y-auto">
               {suggestions.map((s, i) => (
@@ -104,10 +104,10 @@ export function SearchBox({ onNavigate, placeholder, className }: SearchBoxProps
                       setOpen(false)
                     }}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 text-right transition-colors ${
-                      activeIdx === i ? 'bg-[#1e1f2a]' : 'hover:bg-[#16171f]'
+                      activeIdx === i ? 'bg-[#faf9f5]' : 'hover:bg-[#faf9f5]'
                     }`}
                   >
-                    <div className="w-9 h-9 rounded-lg bg-[#0e0f15] border border-[#1e1f2a] flex items-center justify-center shrink-0 overflow-hidden">
+                    <div className="w-9 h-9 rounded-[8px] bg-[#faf9f5] ring-1 ring-[#e8e6e0] flex items-center justify-center shrink-0 overflow-hidden">
                       {s.logoUrl ? (
                         <img
                           src={s.logoUrl}
@@ -116,15 +116,15 @@ export function SearchBox({ onNavigate, placeholder, className }: SearchBoxProps
                           loading="lazy"
                         />
                       ) : (
-                        <Search size={14} className="text-[#505162]" />
+                        <Search size={14} className="text-[#8e8a85]" />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-white truncate">
+                      <div className="text-sm font-medium text-[#141413] truncate">
                         {s.titleFa}
                       </div>
                       {s.titleEn && (
-                        <div className="text-[10px] text-[#6b6c78] truncate" dir="ltr">
+                        <div className="text-[10px] text-[#5b5755] truncate" dir="ltr">
                           {s.titleEn}
                         </div>
                       )}
@@ -132,11 +132,11 @@ export function SearchBox({ onNavigate, placeholder, className }: SearchBoxProps
                   </button>
                 </li>
               ))}
-              <li className="border-t border-[#1e1f2a]">
+              <li className="border-t border-[#e8e6e0]">
                 <button
                   type="button"
                   onClick={() => submit()}
-                  className="w-full text-right px-4 py-2.5 text-xs text-[#d4a853] hover:bg-[#16171f] transition-colors font-medium"
+                  className="w-full text-right px-4 py-2.5 text-xs font-medium text-[#c2410c] transition-colors hover:bg-[#fef2e9]"
                 >
                   مشاهده همه نتایج برای «{value}»
                 </button>

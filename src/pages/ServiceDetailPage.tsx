@@ -3,9 +3,6 @@ import {
   ShoppingCart,
   Heart,
   Share2,
-  Shield,
-  Zap,
-  Award,
   Sparkles,
   Flame,
   Percent,
@@ -28,9 +25,9 @@ import {
 import { ProductCard } from '../components/ProductCard'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { formatToman, toPersianDigits } from '../lib/format'
-import { iconFor, colorForCategory } from '../lib/icons'
+import { iconFor } from '../lib/icons'
 
-const FALLBACK = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%231a1b26"/><circle cx="32" cy="26" r="9" fill="%23505162"/><path d="M14 56c0-9.94 8.06-18 18-18s18 8.06 18 18" fill="%23505162"/></svg>'
+const FALLBACK = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%23f5f3ed"/><circle cx="32" cy="26" r="9" fill="%23dad7d0"/><path d="M14 56c0-9.94 8.06-18 18-18s18 8.06 18 18" fill="%23dad7d0"/></svg>'
 
 export type ServiceDetailPageProps = {
   slug: string
@@ -67,11 +64,11 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
   if (!service) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
-        <h1 className="text-2xl font-black text-white mb-3">سرویس پیدا نشد</h1>
+        <h1 className="font-display text-3xl text-[#141413] mb-3">سرویس پیدا نشد</h1>
         <button
           type="button"
           onClick={() => onNavigate('/categories')}
-          className="text-[#d4a853] hover:underline"
+          className="text-[#c2410c] hover:underline"
         >
           مشاهده دسته‌بندی‌ها
         </button>
@@ -81,10 +78,9 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
 
   const discount = getDiscountPct(service)
   const Icon = category ? iconFor(category.icon) : null
-  const color = category ? colorForCategory(category.slug) : '#d4a853'
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-5">
+    <div className="max-w-7xl mx-auto px-4 py-6">
       <Breadcrumbs
         items={[
           { label: 'دسته‌بندی‌ها', path: '/categories' },
@@ -94,118 +90,111 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
         onNavigate={onNavigate}
       />
 
-      <div className="mt-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* main info */}
         <div className="lg:col-span-7">
-          <div className="bg-[#13141a] border border-[#1e1f2a] rounded-2xl overflow-hidden">
+          <div className="rounded-[12px] bg-[#ffffff] ring-1 ring-[#e8e6e0] overflow-hidden">
             <div className="mx-auto w-full max-w-[460px] sm:max-w-[520px] md:max-w-[560px] p-3 sm:p-4">
-              <div className="relative aspect-square bg-gradient-to-br from-[#1a1b26] to-[#0e0f15] overflow-hidden rounded-xl ring-1 ring-[#1e1f2a]">
+              <div className="relative aspect-square overflow-hidden rounded-[12px] bg-[#f5f3ed]">
                 <img
                   src={service.logoUrl ?? FALLBACK}
                   alt={service.titleFa}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 h-full w-full object-cover"
                   onError={(e) => {
                     ;(e.currentTarget as HTMLImageElement).src = FALLBACK
                   }}
                 />
-                <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-[#0b0c10]/70 to-transparent pointer-events-none" />
               </div>
             </div>
           </div>
 
-          <div className="mt-5 bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-6">
-            <h2 className="text-lg font-black text-white mb-3">درباره {service.titleFa}</h2>
-            <p className="text-sm text-[#9a9baa] leading-7 whitespace-pre-line">
+          <div className="mt-6 rounded-[12px] bg-[#ffffff] ring-1 ring-[#e8e6e0] p-6 md:p-8">
+            <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#c2410c]">
+              توضیحات
+            </span>
+            <h2 className="font-display mt-1 text-2xl text-[#141413]">
+              درباره {service.titleFa}
+            </h2>
+            <p className="mt-4 text-sm leading-8 text-[#5b5755] whitespace-pre-line">
               {service.shortDescriptionFa ??
                 'این سرویس به صورت رسمی ارائه می‌شود. تمام پلن‌ها در همین صفحه قابل مقایسه است و سفارش‌ها در کمتر از چند ساعت تحویل داده می‌شود.'}
             </p>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
+            <div className="mt-8 grid grid-cols-2 gap-x-8 gap-y-6 lg:grid-cols-4">
               {[
-                { icon: Zap, label: 'تحویل سریع', desc: service.deliveryTimeFa ?? '۱۵ دقیقه تا چند ساعت', color: '#d4a853' },
-                { icon: Shield, label: 'ضمانت اصالت', desc: 'فعال‌سازی روی اکانت اصلی', color: '#2ec4b6' },
-                { icon: Award, label: 'پشتیبانی فارسی', desc: 'پاسخگویی ۲۴ ساعته', color: '#9b5de5' },
-                { icon: CheckCircle2, label: `${toPersianDigits(service.planCount)} پلن`, desc: 'بهترین قیمت', color: '#06d6a0' },
-              ].map((it) => {
-                const I = it.icon
-                return (
-                  <div
-                    key={it.label}
-                    className="bg-[#0e0f15] border border-[#1e1f2a] rounded-xl p-3"
-                  >
-                    <div
-                      className="w-9 h-9 rounded-lg flex items-center justify-center mb-2"
-                      style={{ background: `${it.color}15`, border: `1px solid ${it.color}33` }}
-                    >
-                      <I size={16} style={{ color: it.color }} />
-                    </div>
-                    <div className="text-xs font-bold text-white mb-1">{it.label}</div>
-                    <div className="text-[10px] text-[#6b6c78] leading-5">{it.desc}</div>
+                { label: 'تحویل سریع', desc: service.deliveryTimeFa ?? '۱۵ دقیقه تا چند ساعت' },
+                { label: 'ضمانت اصالت', desc: 'فعال‌سازی روی اکانت اصلی' },
+                { label: 'پشتیبانی فارسی', desc: 'پاسخگویی ۲۴ ساعته' },
+                { label: `${toPersianDigits(service.planCount)} پلن`, desc: 'بهترین قیمت' },
+              ].map((it) => (
+                <div key={it.label} className="border-r border-[#e8e6e0] pr-4">
+                  <div className="font-display text-base leading-snug text-[#141413]">
+                    {it.label}
                   </div>
-                )
-              })}
+                  <div className="mt-1 text-[11px] leading-6 text-[#5b5755]">{it.desc}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
         {/* purchase card */}
         <aside className="lg:col-span-5">
-          <div className="lg:sticky lg:top-20 bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-6">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-14 h-14 rounded-xl bg-[#0e0f15] border border-[#1e1f2a] flex items-center justify-center shrink-0 overflow-hidden p-2">
+          <div className="lg:sticky lg:top-24 rounded-[12px] bg-[#ffffff] ring-1 ring-[#e8e6e0] p-6 md:p-8">
+            <div className="mb-5 flex items-start gap-3">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[12px] bg-[#faf9f5] ring-1 ring-[#e8e6e0] p-2">
                 <img
                   src={service.logoUrl ?? FALLBACK}
                   alt=""
-                  className="max-w-full max-h-full object-contain"
+                  className="max-h-full max-w-full object-contain"
                 />
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 {category && Icon && (
                   <button
                     type="button"
                     onClick={() => onNavigate('/c/' + category.slug)}
-                    className="inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-md mb-1.5 transition-colors hover:opacity-80"
-                    style={{ background: `${color}15`, color }}
+                    className="mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-[#faf9f5] ring-1 ring-[#e8e6e0] px-2 py-0.5 text-[10px] font-medium text-[#5b5755] transition-shadow hover:ring-[#dad7d0]"
                   >
                     <Icon size={10} />
                     {category.titleFa}
                   </button>
                 )}
-                <h1 className="text-lg font-black text-white leading-tight line-clamp-2">
+                <h1 className="font-display text-2xl leading-tight text-[#141413] line-clamp-2">
                   {service.titleFa}
                 </h1>
                 {service.titleEn && (
-                  <p className="text-xs text-[#6b6c78] mt-0.5" dir="ltr">
+                  <p className="mt-1 text-xs text-[#8e8a85]" dir="ltr">
                     {service.titleEn}
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="flex items-center gap-2 mb-4 flex-wrap">
+            <div className="mb-5 flex flex-wrap items-center gap-1.5">
               {service.isPopular && (
-                <span className="bg-[#d4a853]/15 text-[#d4a853] text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#141413] px-2 py-0.5 text-[10px] font-medium text-[#faf9f5]">
                   <Flame size={10} />
                   پرفروش
                 </span>
               )}
               {service.isAi && (
-                <span className="bg-[#9b5de5]/15 text-[#9b5de5] text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#faf9f5] ring-1 ring-[#e8e6e0] px-2 py-0.5 text-[10px] font-medium text-[#141413]">
                   <Sparkles size={10} />
                   هوش مصنوعی
                 </span>
               )}
               {discount > 0 && (
-                <span className="bg-[#e63946]/15 text-[#e63946] text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#c2410c] px-2 py-0.5 text-[10px] font-medium text-[#faf9f5]">
                   <Percent size={10} />
                   {discount}٪ تخفیف
                 </span>
               )}
               <span
-                className={`text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 ${
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ${
                   service.inStock
-                    ? 'bg-[#2ec4b6]/15 text-[#2ec4b6]'
-                    : 'bg-[#e63946]/15 text-[#e63946]'
+                    ? 'bg-[#faf9f5] ring-[#e8e6e0] text-[#141413]'
+                    : 'bg-[#fdebec] ring-[#f3c8c9] text-[#b91c1c]'
                 }`}
               >
                 {service.inStock ? (
@@ -222,25 +211,25 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
               </span>
             </div>
 
-            <div className="bg-[#0e0f15] border border-[#1e1f2a] rounded-xl p-4 mb-4">
+            <div className="mb-5 rounded-[12px] bg-[#faf9f5] ring-1 ring-[#e8e6e0] p-5">
               {selectedPlan ? (
                 <>
-                  <div className="text-[11px] text-[#6b6c78] mb-1 line-clamp-1">
+                  <div className="mb-1 line-clamp-1 text-[11px] text-[#5b5755]">
                     {selectedPlan.titleFa}
                   </div>
                   {selectedPlan.compareAtIrt && getPlanDiscountPct(selectedPlan) > 0 && (
-                    <span className="text-[11px] text-[#505162] line-through block mb-1">
+                    <span className="mb-1 block text-[11px] text-[#a8a39d] line-through">
                       {formatToman(selectedPlan.compareAtIrt)} تومان
                     </span>
                   )}
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl md:text-3xl font-black text-white">
+                    <span className="font-display text-3xl text-[#141413] md:text-4xl">
                       {formatToman(selectedPlan.priceIrt)}
                     </span>
-                    <span className="text-xs text-[#6b6c78]">تومان</span>
+                    <span className="text-xs text-[#5b5755]">تومان</span>
                   </div>
                   {servicePlans.length > 1 && (
-                    <p className="text-[10px] text-[#6b6c78] mt-1">
+                    <p className="mt-1 text-[10px] text-[#5b5755]">
                       {toPersianDigits(servicePlans.length)} پلن قابل انتخاب
                     </p>
                   )}
@@ -248,16 +237,16 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
               ) : (
                 <>
                   {service.compareAtIrt && discount > 0 && (
-                    <span className="text-[11px] text-[#505162] line-through block mb-1">
+                    <span className="mb-1 block text-[11px] text-[#a8a39d] line-through">
                       {formatToman(service.compareAtIrt)} تومان
                     </span>
                   )}
                   <div className="flex items-baseline gap-2">
-                    <span className="text-[11px] text-[#6b6c78]">از</span>
-                    <span className="text-2xl md:text-3xl font-black text-white">
+                    <span className="text-[11px] text-[#5b5755]">از</span>
+                    <span className="font-display text-3xl text-[#141413] md:text-4xl">
                       {formatToman(service.fromPriceIrt)}
                     </span>
-                    <span className="text-xs text-[#6b6c78]">تومان</span>
+                    <span className="text-xs text-[#5b5755]">تومان</span>
                   </div>
                 </>
               )}
@@ -266,24 +255,24 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
             <button
               type="button"
               disabled={!service.inStock}
-              className="w-full bg-[#d4a853] hover:bg-[#c49a48] disabled:bg-[#1e1f2a] disabled:text-[#6b6c78] disabled:cursor-not-allowed text-[#0b0c10] font-bold h-12 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 mb-2"
+              className="mb-2 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#141413] text-sm font-medium text-[#faf9f5] transition-colors hover:bg-[#000000] disabled:bg-[#e8e6e0] disabled:text-[#a8a39d] disabled:cursor-not-allowed"
             >
-              <ShoppingCart size={16} />
+              <ShoppingCart size={15} />
               {service.inStock ? 'مشاهده پلن‌ها و خرید' : 'ناموجود'}
             </button>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                className="flex items-center justify-center gap-2 bg-[#0e0f15] border border-[#1e1f2a] hover:border-[#d4a853]/40 text-[#9a9baa] hover:text-white text-xs h-10 rounded-xl transition-all"
+                className="flex h-10 items-center justify-center gap-2 rounded-full bg-[#faf9f5] ring-1 ring-[#e8e6e0] hover:ring-[#141413] text-[#141413] text-xs transition-shadow"
               >
-                <Heart size={14} />
+                <Heart size={13} />
                 علاقه‌مندی
               </button>
               <button
                 type="button"
-                className="flex items-center justify-center gap-2 bg-[#0e0f15] border border-[#1e1f2a] hover:border-[#d4a853]/40 text-[#9a9baa] hover:text-white text-xs h-10 rounded-xl transition-all"
+                className="flex h-10 items-center justify-center gap-2 rounded-full bg-[#faf9f5] ring-1 ring-[#e8e6e0] hover:ring-[#141413] text-[#141413] text-xs transition-shadow"
               >
-                <Share2 size={14} />
+                <Share2 size={13} />
                 اشتراک گذاری
               </button>
             </div>
@@ -293,13 +282,19 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
 
       {/* plans */}
       {servicePlans.length > 0 && (
-        <section className="mt-8">
-          <div className="flex items-center gap-3 mb-5">
-            <span className="w-1 h-6 bg-[#d4a853] rounded-full" />
-            <h2 className="text-lg font-black text-white">پلن‌ها و قیمت‌ها</h2>
-            <span className="text-xs text-[#6b6c78]">
-              ({toPersianDigits(servicePlans.length)} پلن)
-            </span>
+        <section className="mt-12">
+          <div className="mb-6 flex items-end gap-3">
+            <div>
+              <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#c2410c]">
+                پلن‌ها
+              </span>
+              <h2 className="font-display mt-1 text-2xl text-[#141413] md:text-3xl">
+                پلن‌ها و قیمت‌ها
+                <span className="mr-2 text-base text-[#5b5755]">
+                  ({toPersianDigits(servicePlans.length)} پلن)
+                </span>
+              </h2>
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {servicePlans.map((p) => {
@@ -312,25 +307,25 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
                   type="button"
                   disabled={!inStock}
                   onClick={() => setSelectedPlanId(p.id)}
-                  className={`relative text-right bg-[#13141a] border rounded-2xl p-4 transition-all flex flex-col gap-3 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`relative flex flex-col gap-3 rounded-[12px] bg-[#ffffff] p-5 text-right transition-shadow ring-1 disabled:opacity-50 disabled:cursor-not-allowed ${
                     isSelected
-                      ? 'border-[#d4a853] ring-1 ring-[#d4a853]/40'
-                      : 'border-[#1e1f2a] hover:border-[#d4a853]/40'
+                      ? 'ring-2 ring-[#141413]'
+                      : 'ring-[#e8e6e0] hover:ring-[#dad7d0]'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-sm font-bold text-white leading-6 line-clamp-2 flex-1">
+                    <h3 className="font-display flex-1 text-lg leading-snug text-[#141413] line-clamp-2">
                       {p.titleFa}
                     </h3>
-                    <div className="flex flex-col gap-1 items-end shrink-0">
+                    <div className="flex shrink-0 flex-col items-end gap-1">
                       {p.isPopular && (
-                        <span className="bg-[#d4a853] text-[#0b0c10] text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[#141413] px-2 py-0.5 text-[10px] font-medium text-[#faf9f5]">
                           <Flame size={10} />
                           پرفروش
                         </span>
                       )}
                       {planDiscount > 0 && (
-                        <span className="bg-[#e63946] text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[#c2410c] px-2 py-0.5 text-[10px] font-medium text-[#faf9f5]">
                           <Percent size={10} />
                           {toPersianDigits(planDiscount)}٪
                         </span>
@@ -340,48 +335,48 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
 
                   <div className="flex flex-wrap gap-1.5">
                     {p.durationDays != null && (
-                      <span className="bg-[#0e0f15] border border-[#1e1f2a] text-[10px] text-[#9a9baa] px-2 py-1 rounded-md flex items-center gap-1">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#faf9f5] ring-1 ring-[#e8e6e0] px-2 py-1 text-[10px] text-[#5b5755]">
                         <Calendar size={10} />
                         {toPersianDigits(p.durationDays)} روز
                       </span>
                     )}
                     {p.credits != null && (
-                      <span className="bg-[#0e0f15] border border-[#1e1f2a] text-[10px] text-[#9a9baa] px-2 py-1 rounded-md flex items-center gap-1">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#faf9f5] ring-1 ring-[#e8e6e0] px-2 py-1 text-[10px] text-[#5b5755]">
                         <Coins size={10} />
                         {toPersianDigits(p.credits)} اعتبار
                       </span>
                     )}
                     {p.region && (
-                      <span className="bg-[#0e0f15] border border-[#1e1f2a] text-[10px] text-[#9a9baa] px-2 py-1 rounded-md flex items-center gap-1">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#faf9f5] ring-1 ring-[#e8e6e0] px-2 py-1 text-[10px] text-[#5b5755]">
                         <Globe size={10} />
                         {p.region}
                       </span>
                     )}
                     {!inStock && (
-                      <span className="bg-[#e63946]/15 text-[#e63946] text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#fdebec] ring-1 ring-[#f3c8c9] px-2 py-1 text-[10px] font-medium text-[#b91c1c]">
                         <AlertCircle size={10} />
                         ناموجود
                       </span>
                     )}
                   </div>
 
-                  <div className="mt-auto pt-2 border-t border-[#1e1f2a] flex items-end justify-between gap-2">
+                  <div className="mt-auto flex items-end justify-between gap-2 border-t border-[#e8e6e0] pt-3">
                     <div className="min-w-0">
                       {p.compareAtIrt && planDiscount > 0 && (
-                        <span className="text-[10px] text-[#505162] line-through block leading-tight">
+                        <span className="block text-[10px] leading-tight text-[#a8a39d] line-through">
                           {formatToman(p.compareAtIrt)}
                         </span>
                       )}
-                      <span className="font-black text-base text-white leading-tight whitespace-nowrap">
+                      <span className="block whitespace-nowrap font-display text-xl leading-tight text-[#141413]">
                         {formatToman(p.priceIrt)}
                       </span>
-                      <span className="text-[10px] text-[#6b6c78] mr-1">تومان</span>
+                      <span className="mr-1 text-[10px] text-[#5b5755]">تومان</span>
                     </div>
                     <span
-                      className={`text-[10px] font-bold px-2 py-1 rounded-md ${
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-medium ${
                         isSelected
-                          ? 'bg-[#d4a853] text-[#0b0c10]'
-                          : 'bg-[#1e1f2a] text-[#9a9baa]'
+                          ? 'bg-[#141413] text-[#faf9f5]'
+                          : 'bg-[#faf9f5] ring-1 ring-[#e8e6e0] text-[#5b5755]'
                       }`}
                     >
                       {isSelected ? 'انتخاب شد' : 'انتخاب'}
@@ -396,16 +391,20 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
 
       {/* related */}
       {related.length > 0 && category && (
-        <section className="mt-10">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <span className="w-1 h-6 bg-[#d4a853] rounded-full" />
-              <h2 className="text-lg font-black text-white">سرویس‌های مشابه</h2>
+        <section className="mt-12">
+          <div className="mb-6 flex items-end justify-between">
+            <div>
+              <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#5b5755]">
+                مرتبط
+              </span>
+              <h2 className="font-display mt-1 text-2xl text-[#141413] md:text-3xl">
+                سرویس‌های مشابه
+              </h2>
             </div>
             <button
               type="button"
               onClick={() => onNavigate('/c/' + category.slug)}
-              className="text-xs text-[#d4a853] hover:underline font-medium"
+              className="text-xs font-medium text-[#141413] transition-colors hover:text-[#c2410c]"
             >
               مشاهده همه
             </button>

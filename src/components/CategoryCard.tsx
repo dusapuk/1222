@@ -1,6 +1,6 @@
-import { ChevronLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import type { Category } from '../lib/data'
-import { iconFor, colorForCategory, imageForCategory } from '../lib/icons'
+import { iconFor, imageForCategory } from '../lib/icons'
 import { toPersianDigits } from '../lib/format'
 
 export type CategoryCardProps = {
@@ -11,95 +11,52 @@ export type CategoryCardProps = {
 
 export function CategoryCard({ category, count, onClick }: CategoryCardProps) {
   const Icon = iconFor(category.icon)
-  const color = colorForCategory(category.slug)
   const image = imageForCategory(category.slug)
 
   return (
     <button
       type="button"
       onClick={() => onClick?.(category.slug)}
-      className="group relative block w-full overflow-hidden rounded-2xl bg-[#0e0f15] text-right transition-all focus:outline-none focus:ring-2 focus:ring-[#d4a853]/50"
-      style={{
-        aspectRatio: '5 / 4',
-        boxShadow: `0 1px 0 0 ${color}22, 0 0 0 1px #1e1f2a`,
-      }}
+      className="group flex w-full flex-col overflow-hidden rounded-[12px] bg-[#ffffff] text-right ring-1 ring-[#e8e6e0] transition-[transform,box-shadow] duration-200 hover:-translate-y-[1px] hover:ring-[#dad7d0] focus:outline-none focus:ring-2 focus:ring-[#c2410c]/30"
     >
-      <img
-        src={image}
-        alt={category.titleFa}
-        loading="lazy"
-        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-      />
-
-      {/* tinted color veil for cohesion + slight per-category hue */}
-      <div
-        aria-hidden
-        className="absolute inset-0 mix-blend-multiply opacity-50 transition-opacity group-hover:opacity-30"
-        style={{ background: `linear-gradient(135deg, ${color}33 0%, #0b0c10cc 100%)` }}
-      />
-
-      {/* readability gradient bottom -> top */}
-      <div
-        aria-hidden
-        className="absolute inset-x-0 bottom-0 h-3/4"
-        style={{
-          background:
-            'linear-gradient(to top, rgba(8,9,14,0.96) 0%, rgba(8,9,14,0.78) 35%, rgba(8,9,14,0.18) 75%, rgba(8,9,14,0) 100%)',
-        }}
-      />
-
-      {/* top-left accent bar */}
-      <span
-        aria-hidden
-        className="absolute top-4 right-4 h-7 w-1 rounded-full"
-        style={{ background: color }}
-      />
-
-      {/* icon chip top-right */}
-      <div
-        className="absolute top-4 left-4 flex h-9 w-9 items-center justify-center rounded-xl backdrop-blur-md transition-transform group-hover:scale-110"
-        style={{
-          background: `${color}26`,
-          border: `1px solid ${color}66`,
-          boxShadow: `0 4px 18px -6px ${color}88`,
-        }}
-      >
-        <Icon size={18} style={{ color }} />
+      <div className="relative aspect-[16/10] overflow-hidden bg-[#f5f3ed]">
+        <img
+          src={image}
+          alt={category.titleFa}
+          loading="lazy"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
       </div>
 
-      {/* hover-only golden border ring */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity group-hover:opacity-100"
-        style={{ boxShadow: 'inset 0 0 0 1.5px rgba(212,168,83,0.55)' }}
-      />
-
-      {/* content */}
-      <div className="relative flex h-full flex-col justify-end p-4 sm:p-5">
-        {category.titleEn && (
-          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">
-            {category.titleEn}
-          </span>
-        )}
-        <h3 className="mb-3 text-xl font-black leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] sm:text-2xl">
-          {category.titleFa}
-        </h3>
-        <div className="flex items-center justify-between">
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div className="flex items-start gap-3">
           <span
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-bold backdrop-blur-md"
-            style={{
-              background: `${color}26`,
-              color,
-              border: `1px solid ${color}55`,
-            }}
+            aria-hidden
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#faf9f5] ring-1 ring-[#e8e6e0]"
           >
+            <Icon size={16} className="text-[#5b5755]" />
+          </span>
+          <div className="min-w-0 flex-1">
+            {category.titleEn && (
+              <span className="block text-[10px] uppercase tracking-[0.16em] text-[#8e8a85]">
+                {category.titleEn}
+              </span>
+            )}
+            <h3 className="font-display text-xl leading-tight text-[#141413] line-clamp-1">
+              {category.titleFa}
+            </h3>
+          </div>
+        </div>
+
+        <div className="mt-auto flex items-center justify-between">
+          <span className="text-xs text-[#5b5755]">
             {toPersianDigits(count)} سرویس
           </span>
-          <span className="inline-flex items-center gap-1 text-xs font-semibold text-white/85 transition-colors group-hover:text-[#d4a853]">
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-[#141413] transition-colors group-hover:text-[#c2410c]">
             مشاهده
-            <ChevronLeft
-              size={14}
-              className="transition-transform group-hover:-translate-x-1"
+            <ArrowLeft
+              size={13}
+              className="transition-transform group-hover:-translate-x-0.5"
             />
           </span>
         </div>

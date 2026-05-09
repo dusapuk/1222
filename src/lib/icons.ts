@@ -39,50 +39,14 @@ export function iconFor(name: string | null | undefined): LucideIcon {
   return map[name] ?? Layers
 }
 
-const colors = [
-  '#d4a853',
-  '#2ec4b6',
-  '#9b5de5',
-  '#00b4d8',
-  '#f77f00',
-  '#06d6a0',
-  '#118ab2',
-  '#ef476f',
-  '#e63946',
-  '#f4a261',
-  '#7b2cbf',
-  '#22c55e',
-  '#3b82f6',
-  '#fb7185',
-]
-
-// Stable, hand-picked anchor color per category (used for accents, glows, chips).
-// Anything not listed falls back to a deterministic hash → palette pick so we
-// never crash if new categories are added on the backend.
-const categoryColors: Record<string, string> = {
-  'ai-assistants': '#9b5de5',
-  'ai-image': '#ef476f',
-  'ai-video': '#e63946',
-  'ai-voice-music': '#06d6a0',
-  'ai-writing-seo': '#d4a853',
-  'developer-tools': '#3b82f6',
-  'design-creative': '#fb7185',
-  'productivity-work': '#f4a261',
-  streaming: '#e63946',
-  music: '#7b2cbf',
-  education: '#118ab2',
-  'cloud-storage': '#00b4d8',
-  'social-communication': '#f77f00',
-  'business-marketing': '#22c55e',
-}
+// Editorial Ivory: a single graphite tone for every category.
+// Differentiation now lives in the icon glyph and the category title — not in
+// per-category color halos, glows, or chip tints.
+const INK_GRAPHITE = '#5b5755'
 
 export function colorForCategory(slug: string): string {
-  if (categoryColors[slug]) return categoryColors[slug]
-  let h = 0
-  for (let i = 0; i < slug.length; i++) {
-    h = (h * 31 + slug.charCodeAt(i)) >>> 0
-  }
-  return colors[h % colors.length]
+  void slug
+  return INK_GRAPHITE
 }
 
 // Hero image per category. Kept in lockstep with public/images/categories/<slug>.jpg

@@ -62,52 +62,52 @@ export function SearchPage({
   const visible = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-5">
+    <div className="max-w-7xl mx-auto px-4 py-6">
       <Breadcrumbs items={[{ label: 'جستجو' }]} onNavigate={onNavigate} />
 
-      <header className="mt-5 mb-6">
-        <div className="flex items-center gap-3 mb-3">
-          <span className="w-1 h-7 bg-[#d4a853] rounded-full" />
-          <h1 className="text-xl md:text-2xl font-black text-white">
-            نتایج جستجو {localQuery && <span className="text-[#d4a853]">«{localQuery}»</span>}
-          </h1>
-        </div>
-        <div className="relative max-w-2xl">
+      <header className="mt-6 mb-8">
+        <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#c2410c]">
+          جستجو
+        </span>
+        <h1 className="font-display mt-1 text-2xl text-[#141413] md:text-4xl">
+          نتایج جستجو {localQuery && <span className="text-[#c2410c]">«{localQuery}»</span>}
+        </h1>
+        <div className="mt-5 relative max-w-2xl">
           <input
             type="text"
             value={localQuery}
             onChange={(e) => setLocalQuery(e.target.value)}
             placeholder="جستجو در همه سرویس‌ها..."
-            className="w-full bg-[#13141a] border border-[#252630] rounded-xl h-11 pr-11 pl-3 text-sm text-white placeholder-[#505162] outline-none focus:border-[#d4a853] transition-colors"
+            className="h-11 w-full rounded-full bg-[#ffffff] pl-3 pr-11 text-sm text-[#141413] placeholder-[#a8a39d] outline-none ring-1 ring-[#e8e6e0] focus:ring-[#141413] transition-shadow"
             autoFocus
           />
           <SearchIcon
             size={16}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#505162]"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8e8a85]"
           />
         </div>
       </header>
 
-      <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
-        <span className="text-xs text-[#8a8b96] bg-[#13141a] border border-[#1e1f2a] px-3 py-2 rounded-xl">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
+        <span className="rounded-full bg-[#ffffff] ring-1 ring-[#e8e6e0] px-4 py-2 text-xs text-[#5b5755]">
           {toPersianDigits(filtered.length)} نتیجه
         </span>
         <SortSelect value={sort} onChange={setSort} />
       </div>
 
       {visible.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center bg-[#13141a] border border-[#1e1f2a] rounded-2xl">
-          <div className="w-14 h-14 rounded-2xl bg-[#1e1f2a] flex items-center justify-center mb-4">
-            <Inbox size={24} className="text-[#505162]" />
+        <div className="flex flex-col items-center justify-center rounded-[12px] bg-[#ffffff] ring-1 ring-[#e8e6e0] py-20 text-center">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#faf9f5] ring-1 ring-[#e8e6e0]">
+            <Inbox size={22} className="text-[#5b5755]" />
           </div>
-          <h3 className="font-bold text-base text-white mb-2">نتیجه‌ای پیدا نشد</h3>
-          <p className="text-sm text-[#8a8b96] max-w-sm">
+          <h3 className="font-display text-lg text-[#141413] mb-2">نتیجه‌ای پیدا نشد</h3>
+          <p className="max-w-sm text-sm text-[#5b5755]">
             با کلمات کلیدی متفاوت جستجو کنید یا یکی از دسته‌بندی‌ها را مرور کنید.
           </p>
           <button
             type="button"
             onClick={() => onNavigate('/categories')}
-            className="mt-4 bg-[#d4a853] hover:bg-[#c49a48] text-[#0b0c10] text-sm font-bold px-5 py-2.5 rounded-xl transition-colors"
+            className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#141413] px-5 py-2.5 text-sm font-medium text-[#faf9f5] transition-colors hover:bg-[#000000]"
           >
             مشاهده دسته‌بندی‌ها
           </button>

@@ -20,26 +20,29 @@ export function Pagination({ page, pageCount, onChange }: PaginationProps) {
     }
   }
 
+  const baseBtn =
+    'flex h-9 min-w-9 items-center justify-center rounded-full text-xs font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed'
+
   return (
     <nav
       aria-label="صفحه‌بندی"
-      className="flex items-center justify-center gap-1.5 mt-8 flex-wrap"
+      className="mt-10 flex flex-wrap items-center justify-center gap-1.5"
     >
       <button
         type="button"
         disabled={page === 1}
         onClick={() => onChange(page - 1)}
-        className="w-9 h-9 flex items-center justify-center bg-[#13141a] border border-[#1e1f2a] rounded-lg text-[#9a9baa] hover:text-white hover:border-[#d4a853]/40 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        className={`${baseBtn} w-9 bg-[#ffffff] text-[#141413] ring-1 ring-[#e8e6e0] hover:ring-[#141413]`}
         aria-label="قبلی"
       >
-        <ChevronRight size={16} />
+        <ChevronRight size={15} />
       </button>
 
       {items.map((it, idx) =>
         it === '…' ? (
           <span
             key={`gap-${idx}`}
-            className="w-9 h-9 flex items-center justify-center text-[#505162] text-xs"
+            className="flex h-9 w-9 items-center justify-center text-xs text-[#a8a39d]"
           >
             …
           </span>
@@ -49,10 +52,10 @@ export function Pagination({ page, pageCount, onChange }: PaginationProps) {
             type="button"
             onClick={() => onChange(it)}
             aria-current={it === page ? 'page' : undefined}
-            className={`min-w-9 h-9 px-3 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
+            className={`${baseBtn} px-3 ${
               it === page
-                ? 'bg-[#d4a853] text-[#0b0c10] border border-[#d4a853]'
-                : 'bg-[#13141a] border border-[#1e1f2a] text-[#9a9baa] hover:text-white hover:border-[#d4a853]/40'
+                ? 'bg-[#141413] text-[#faf9f5]'
+                : 'bg-[#ffffff] text-[#141413] ring-1 ring-[#e8e6e0] hover:ring-[#141413]'
             }`}
           >
             {toPersianDigits(it)}
@@ -64,10 +67,10 @@ export function Pagination({ page, pageCount, onChange }: PaginationProps) {
         type="button"
         disabled={page === pageCount}
         onClick={() => onChange(page + 1)}
-        className="w-9 h-9 flex items-center justify-center bg-[#13141a] border border-[#1e1f2a] rounded-lg text-[#9a9baa] hover:text-white hover:border-[#d4a853]/40 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        className={`${baseBtn} w-9 bg-[#ffffff] text-[#141413] ring-1 ring-[#e8e6e0] hover:ring-[#141413]`}
         aria-label="بعدی"
       >
-        <ChevronLeft size={16} />
+        <ChevronLeft size={15} />
       </button>
     </nav>
   )

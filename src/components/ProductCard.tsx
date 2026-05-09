@@ -3,7 +3,7 @@ import type { Service } from '../lib/data'
 import { getDiscountPct } from '../lib/data'
 import { formatToman } from '../lib/format'
 
-const FALLBACK = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%231a1b26"/><circle cx="32" cy="26" r="9" fill="%23505162"/><path d="M14 56c0-9.94 8.06-18 18-18s18 8.06 18 18" fill="%23505162"/></svg>'
+const FALLBACK = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%23f5f3ed"/><circle cx="32" cy="26" r="9" fill="%23dad7d0"/><path d="M14 56c0-9.94 8.06-18 18-18s18 8.06 18 18" fill="%23dad7d0"/></svg>'
 
 export type ProductCardProps = {
   service: Service
@@ -23,35 +23,34 @@ export function ProductCard({ service: s, onClick, variant = 'default' }: Produc
       onKeyDown={(e) => {
         if (e.key === 'Enter') onClick?.(s)
       }}
-      className="group bg-[#13141a] border border-[#1e1f2a] rounded-2xl overflow-hidden hover:border-[#d4a853]/40 transition-all cursor-pointer flex flex-col focus:outline-none focus:ring-2 focus:ring-[#d4a853]/50"
+      className="group flex cursor-pointer flex-col overflow-hidden rounded-[12px] bg-[#ffffff] ring-1 ring-[#e8e6e0] transition-[transform,box-shadow] duration-200 hover:-translate-y-[1px] hover:ring-[#dad7d0] focus:outline-none focus:ring-2 focus:ring-[#c2410c]/30"
     >
-      <div className={`relative overflow-hidden aspect-square bg-gradient-to-br from-[#1a1b26] to-[#0e0f15] ${compact ? 'p-4' : ''}`}>
+      <div className={`relative aspect-square overflow-hidden bg-[#f5f3ed] ${compact ? 'p-4' : ''}`}>
         <img
           src={s.logoUrl ?? FALLBACK}
           alt={s.titleFa}
           loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="absolute inset-0 h-full w-full object-cover"
           onError={(e) => {
             ;(e.currentTarget as HTMLImageElement).src = FALLBACK
           }}
         />
-        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0b0c10]/70 to-transparent pointer-events-none" />
 
-        <div className="absolute top-3 right-3 flex flex-col gap-1.5">
+        <div className="absolute right-3 top-3 flex flex-col items-end gap-1.5">
           {discount > 0 && (
-            <span className="bg-[#e63946] text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-lg">
+            <span className="flex items-center gap-1 rounded-full bg-[#c2410c] px-2 py-0.5 text-[10px] font-medium text-[#faf9f5]">
               <Percent size={10} />
               {discount}٪
             </span>
           )}
           {s.isPopular && (
-            <span className="bg-[#d4a853] text-[#0b0c10] text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-lg">
+            <span className="flex items-center gap-1 rounded-full bg-[#141413] px-2 py-0.5 text-[10px] font-medium text-[#faf9f5]">
               <Flame size={10} />
               پرفروش
             </span>
           )}
           {s.isAi && (
-            <span className="bg-[#9b5de5] text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-lg">
+            <span className="flex items-center gap-1 rounded-full bg-[#faf9f5] px-2 py-0.5 text-[10px] font-medium text-[#141413] ring-1 ring-[#e8e6e0]">
               <Sparkles size={10} />
               AI
             </span>
@@ -59,53 +58,53 @@ export function ProductCard({ service: s, onClick, variant = 'default' }: Produc
         </div>
 
         {!s.inStock && (
-          <div className="absolute inset-0 bg-[#0b0c10]/70 backdrop-blur-[2px] flex items-center justify-center">
-            <span className="bg-[#1e1f2a] text-[#e63946] text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+          <div className="absolute inset-0 flex items-center justify-center bg-[#faf9f5]/80">
+            <span className="flex items-center gap-1.5 rounded-full bg-[#141413] px-3 py-1 text-xs font-medium text-[#faf9f5]">
               <AlertCircle size={12} />
               ناموجود
             </span>
           </div>
         )}
 
-        <div className="absolute bottom-3 left-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute bottom-3 left-3 flex gap-1.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
           <button
             type="button"
             onClick={(e) => e.stopPropagation()}
-            className="w-8 h-8 bg-[#0b0c10]/80 backdrop-blur-sm rounded-lg flex items-center justify-center text-[#8a8b96] hover:text-[#e63946] transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#faf9f5] text-[#5b5755] ring-1 ring-[#e8e6e0] transition-colors hover:text-[#c2410c]"
             aria-label="افزودن به علاقه‌مندی"
           >
-            <Heart size={14} />
+            <Heart size={13} />
           </button>
           <button
             type="button"
             onClick={(e) => e.stopPropagation()}
-            className="w-8 h-8 bg-[#0b0c10]/80 backdrop-blur-sm rounded-lg flex items-center justify-center text-[#8a8b96] hover:text-white transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#faf9f5] text-[#5b5755] ring-1 ring-[#e8e6e0] transition-colors hover:text-[#141413]"
             aria-label="نمایش سریع"
           >
-            <Eye size={14} />
+            <Eye size={13} />
           </button>
         </div>
       </div>
 
-      <div className="p-4 flex flex-col flex-1">
-        <h4 className="font-bold text-sm text-white mb-1 line-clamp-1 group-hover:text-[#d4a853] transition-colors">
+      <div className="flex flex-1 flex-col p-4">
+        <h4 className="mb-1 line-clamp-1 font-display text-base text-[#141413] transition-colors group-hover:text-[#c2410c]">
           {s.titleFa}
         </h4>
-        <p className="text-[11px] text-[#6b6c78] mb-3 line-clamp-2 leading-5 min-h-[2.5rem]">
+        <p className="mb-3 min-h-[2.5rem] line-clamp-2 text-[11px] leading-5 text-[#5b5755]">
           {s.shortDescriptionFa ?? s.titleEn ?? ''}
         </p>
 
         <div className="mt-auto flex items-end justify-between gap-2">
           <div className="min-w-0">
             {s.compareAtIrt && discount > 0 && (
-              <span className="text-[11px] text-[#505162] line-through block leading-tight">
+              <span className="block text-[11px] leading-tight text-[#a8a39d] line-through">
                 {formatToman(s.compareAtIrt)}
               </span>
             )}
-            <span className="font-black text-[15px] text-white leading-tight whitespace-nowrap">
+            <span className="block whitespace-nowrap font-display text-lg leading-tight text-[#141413]">
               از {formatToman(s.fromPriceIrt)}
             </span>
-            <span className="text-[10px] text-[#6b6c78] mr-1">تومان</span>
+            <span className="mr-1 text-[10px] text-[#8e8a85]">تومان</span>
           </div>
           <button
             type="button"
@@ -113,10 +112,10 @@ export function ProductCard({ service: s, onClick, variant = 'default' }: Produc
               e.stopPropagation()
               onClick?.(s)
             }}
-            className="bg-[#1e1f2a] hover:bg-[#d4a853] text-[#8a8b96] hover:text-[#0b0c10] w-9 h-9 rounded-xl flex items-center justify-center transition-all shrink-0"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#141413] text-[#faf9f5] transition-transform duration-150 group-hover:bg-[#c2410c]"
             aria-label="افزودن به سبد"
           >
-            <ShoppingCart size={16} />
+            <ShoppingCart size={15} />
           </button>
         </div>
       </div>

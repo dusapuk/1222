@@ -12,28 +12,28 @@ export type BreadcrumbsProps = {
 
 export function Breadcrumbs({ items, onNavigate }: BreadcrumbsProps) {
   return (
-    <nav className="flex items-center gap-1 text-xs text-[#6b6c78] flex-wrap">
+    <nav className="flex flex-wrap items-center gap-1.5 text-xs text-[#5b5755]">
       <button
         type="button"
         onClick={() => onNavigate('/')}
-        className="flex items-center gap-1 hover:text-[#d4a853] transition-colors"
+        className="inline-flex items-center gap-1 transition-colors hover:text-[#c2410c]"
       >
         <Home size={12} />
         خانه
       </button>
       {items.map((c, i) => (
-        <span key={i} className="flex items-center gap-1">
-          <ChevronLeft size={12} className="text-[#3a3b48]" />
+        <span key={i} className="inline-flex items-center gap-1.5">
+          <ChevronLeft size={11} className="text-[#a8a39d]" />
           {c.path ? (
             <button
               type="button"
               onClick={() => onNavigate(c.path!)}
-              className="hover:text-[#d4a853] transition-colors"
+              className="transition-colors hover:text-[#c2410c]"
             >
               {c.label}
             </button>
           ) : (
-            <span className="text-white font-medium">{c.label}</span>
+            <span className="font-medium text-[#141413]">{c.label}</span>
           )}
         </span>
       ))}

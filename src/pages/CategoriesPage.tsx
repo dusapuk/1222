@@ -3,7 +3,6 @@ import { CategoryCard } from '../components/CategoryCard'
 import { ProductCard } from '../components/ProductCard'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { toPersianDigits } from '../lib/format'
-import { Layers } from 'lucide-react'
 
 export type CategoriesPageProps = {
   onNavigate: (path: string, params?: Record<string, string | number | null | undefined>) => void
@@ -20,20 +19,18 @@ export function CategoriesPage({ onNavigate }: CategoriesPageProps) {
         onNavigate={onNavigate}
       />
 
-      <header className="mt-5 mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="w-1 h-7 bg-[#d4a853] rounded-full" />
-            <h1 className="text-2xl md:text-3xl font-black text-white">همه دسته‌بندی‌ها</h1>
-          </div>
-          <p className="text-sm text-[#8a8b96] leading-7">
+      <header className="mt-6 mb-10 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="max-w-2xl">
+          <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#c2410c]">
+            کاتالوگ
+          </span>
+          <h1 className="font-display mt-1 text-3xl text-[#141413] md:text-5xl">
+            همه دسته‌بندی‌ها
+          </h1>
+          <p className="mt-3 text-sm leading-7 text-[#5b5755] md:text-base md:leading-8">
             {toPersianDigits(categories.length)} دسته‌بندی،{' '}
-            {toPersianDigits(totalServices.toLocaleString('en-US'))} سرویس فعال — هر چیزی که برای زندگی دیجیتال نیاز داری
+            {toPersianDigits(totalServices.toLocaleString('en-US'))} سرویس فعال — هر چیزی که برای زندگی دیجیتال نیاز داری.
           </p>
-        </div>
-        <div className="hidden md:flex items-center gap-2 text-xs text-[#d4a853] bg-[#d4a853]/10 px-3 py-2 rounded-lg border border-[#d4a853]/20">
-          <Layers size={14} />
-          {toPersianDigits(categories.length)} دسته‌بندی
         </div>
       </header>
 
@@ -49,11 +46,16 @@ export function CategoriesPage({ onNavigate }: CategoriesPageProps) {
       </section>
 
       {featured.length > 0 && (
-        <section className="mt-10">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <span className="w-1 h-6 bg-[#e63946] rounded-full" />
-              <h2 className="text-xl font-black text-white">پیشنهادهای ویژه</h2>
+        <section className="mt-12">
+          <div className="hairline mb-6" />
+          <div className="mb-6 flex items-end justify-between">
+            <div>
+              <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#c2410c]">
+                ویژه
+              </span>
+              <h2 className="font-display mt-1 text-2xl text-[#141413] md:text-3xl">
+                پیشنهادهای ویژه
+              </h2>
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">

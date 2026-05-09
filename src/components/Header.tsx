@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { SearchBox } from './SearchBox'
 import { categories } from '../lib/data'
-import { iconFor, colorForCategory } from '../lib/icons'
+import { iconFor } from '../lib/icons'
 
 export type HeaderProps = {
   onNavigate: (path: string, params?: Record<string, string | number | null | undefined>) => void
@@ -19,8 +19,8 @@ export type HeaderProps = {
 
 function TopBar() {
   return (
-    <div className="bg-[#101118] border-b border-[#1e1f2a]">
-      <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-9 text-xs text-[#8a8b96]">
+    <div className="bg-[#f5f3ed] border-b border-[#e8e6e0]">
+      <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-9 text-xs text-[#5b5755]">
         <div className="flex items-center gap-5">
           <span className="hidden sm:flex items-center gap-1.5">
             <Phone size={12} />
@@ -36,7 +36,7 @@ function TopBar() {
             <MapPin size={12} />
             ارسال به سراسر ایران
           </span>
-          <span className="text-[#d4a853] font-medium">🔥 تخفیف ویژه نوروزی تا ۳۰٪</span>
+          <span className="font-medium text-[#c2410c]">تخفیف ویژه نوروزی تا ۳۰٪</span>
         </div>
       </div>
     </div>
@@ -60,7 +60,7 @@ export function Header({ onNavigate }: HeaderProps) {
   return (
     <>
       <TopBar />
-      <header className="bg-[#0e0f15] sticky top-0 z-40 border-b border-[#1a1b26]">
+      <header className="sticky top-0 z-40 bg-[#faf9f5]/95 backdrop-blur-[2px] border-b border-[#e8e6e0]">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16 gap-3">
             {/* logo */}
@@ -69,15 +69,12 @@ export function Header({ onNavigate }: HeaderProps) {
               onClick={() => onNavigate('/')}
               className="flex items-center gap-3 shrink-0"
             >
-              <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center font-black text-lg"
-                style={{ background: 'linear-gradient(135deg, #d4a853 0%, #b8860b 100%)' }}
-              >
-                <span className="text-[#0b0c10]">پ</span>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[#141413] text-[#faf9f5]">
+                <span className="font-display text-lg leading-none">پ</span>
               </div>
               <div className="leading-tight text-right hidden sm:block">
-                <span className="font-extrabold text-lg text-white tracking-tight">پی‌کارت</span>
-                <span className="block text-[10px] text-[#6b6c78] -mt-0.5">PIKART.IR</span>
+                <span className="font-display text-xl text-[#141413] tracking-tight">پی‌کارت</span>
+                <span className="block text-[10px] uppercase tracking-[0.16em] text-[#8e8a85] -mt-0.5">PIKART.IR</span>
               </div>
             </button>
 
@@ -87,41 +84,38 @@ export function Header({ onNavigate }: HeaderProps) {
             </div>
 
             {/* actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => onNavigate('/categories')}
-                className="hidden lg:flex items-center gap-2 text-sm text-[#c4c5d0] hover:text-[#d4a853] transition-colors px-3 h-10"
+                className="hidden lg:flex items-center gap-2 text-sm text-[#141413] transition-colors hover:text-[#c2410c] px-3 h-10"
               >
                 دسته‌بندی‌ها
               </button>
               <button
                 type="button"
-                className="relative p-2.5 rounded-lg hover:bg-[#16171f] transition-colors group"
+                className="relative flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-[#f5f3ed]"
                 aria-label="سبد خرید"
               >
-                <ShoppingCart
-                  size={20}
-                  className="text-[#8a8b96] group-hover:text-white transition-colors"
-                />
+                <ShoppingCart size={18} className="text-[#141413]" />
               </button>
               <button
                 type="button"
-                className="hidden sm:flex items-center gap-2 bg-[#16171f] border border-[#252630] rounded-xl h-10 px-4 text-sm text-[#c4c5d0] hover:border-[#d4a853] hover:text-white transition-all"
+                className="hidden sm:inline-flex items-center gap-2 rounded-full bg-[#141413] px-4 h-10 text-sm font-medium text-[#faf9f5] transition-colors hover:bg-[#000000]"
               >
-                <User size={16} />
+                <User size={15} />
                 ورود
               </button>
               <button
                 type="button"
-                className="md:hidden p-2.5 rounded-lg hover:bg-[#16171f]"
+                className="md:hidden flex h-10 w-10 items-center justify-center rounded-full hover:bg-[#f5f3ed]"
                 onClick={() => setMobileMenu(!mobileMenu)}
                 aria-label="منو"
               >
                 {mobileMenu ? (
-                  <X size={20} className="text-white" />
+                  <X size={20} className="text-[#141413]" />
                 ) : (
-                  <Menu size={20} className="text-[#8a8b96]" />
+                  <Menu size={20} className="text-[#141413]" />
                 )}
               </button>
             </div>
@@ -134,20 +128,19 @@ export function Header({ onNavigate }: HeaderProps) {
         </div>
 
         {/* category bar (desktop) */}
-        <div className="hidden md:block border-t border-[#1a1b26] bg-[#0e0f15]">
+        <div className="hidden md:block border-t border-[#e8e6e0]">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center gap-1 py-2 overflow-x-auto scrollbar-hide">
               {categories.slice(0, 9).map((c) => {
                 const Icon = iconFor(c.icon)
-                const color = colorForCategory(c.slug)
                 return (
                   <button
                     key={c.id}
                     type="button"
                     onClick={() => onNavigate('/c/' + c.slug)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[#9a9baa] hover:text-white hover:bg-[#16171f] transition-all whitespace-nowrap shrink-0"
+                    className="flex items-center gap-2 rounded-full px-3 py-2 text-sm text-[#5b5755] transition-colors hover:bg-[#f5f3ed] hover:text-[#141413] whitespace-nowrap shrink-0"
                   >
-                    <Icon size={15} style={{ color }} />
+                    <Icon size={14} className="text-[#5b5755]" />
                     {c.titleFa}
                   </button>
                 )
@@ -155,7 +148,7 @@ export function Header({ onNavigate }: HeaderProps) {
               <button
                 type="button"
                 onClick={() => onNavigate('/categories')}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-[#d4a853] hover:bg-[#1a1716] transition-all whitespace-nowrap shrink-0 font-medium"
+                className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-[#c2410c] transition-colors hover:bg-[#fef2e9] whitespace-nowrap shrink-0"
               >
                 همه دسته‌ها
                 <ChevronDown size={13} />
@@ -167,14 +160,14 @@ export function Header({ onNavigate }: HeaderProps) {
 
       {/* mobile menu */}
       {mobileMenu && (
-        <div className="md:hidden fixed inset-0 z-50 top-[105px] bg-[#0b0c10] overflow-y-auto">
+        <div className="md:hidden fixed inset-0 z-50 top-[105px] bg-[#faf9f5] overflow-y-auto">
           <nav className="max-w-7xl mx-auto px-4 py-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-white">منو</h3>
+              <h3 className="font-display text-lg text-[#141413]">منو</h3>
               <button
                 type="button"
                 onClick={() => setMobileMenu(false)}
-                className="p-2 rounded-lg text-[#8a8b96] hover:bg-[#16171f]"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-[#5b5755] hover:bg-[#f5f3ed]"
                 aria-label="بستن"
               >
                 <X size={18} />
@@ -186,7 +179,7 @@ export function Header({ onNavigate }: HeaderProps) {
                 onNavigate('/')
                 setMobileMenu(false)
               }}
-              className="w-full text-right px-3 py-3 rounded-lg text-sm text-white hover:bg-[#16171f]"
+              className="w-full text-right px-3 py-3 rounded-xl text-sm text-[#141413] hover:bg-[#f5f3ed]"
             >
               صفحه اصلی
             </button>
@@ -196,14 +189,14 @@ export function Header({ onNavigate }: HeaderProps) {
                 onNavigate('/categories')
                 setMobileMenu(false)
               }}
-              className="w-full text-right px-3 py-3 rounded-lg text-sm text-white hover:bg-[#16171f]"
+              className="w-full text-right px-3 py-3 rounded-xl text-sm text-[#141413] hover:bg-[#f5f3ed]"
             >
               همه دسته‌بندی‌ها
             </button>
             <button
               type="button"
               onClick={() => setAllCatsOpen((s) => !s)}
-              className="w-full flex items-center justify-between text-right px-3 py-3 rounded-lg text-sm text-white hover:bg-[#16171f]"
+              className="w-full flex items-center justify-between text-right px-3 py-3 rounded-xl text-sm text-[#141413] hover:bg-[#f5f3ed]"
             >
               <span>دسته‌بندی‌ها</span>
               <ChevronDown
@@ -215,7 +208,6 @@ export function Header({ onNavigate }: HeaderProps) {
               <div className="grid grid-cols-2 gap-2 mt-2 mb-3 px-1">
                 {categories.map((c) => {
                   const Icon = iconFor(c.icon)
-                  const color = colorForCategory(c.slug)
                   return (
                     <button
                       key={c.id}
@@ -224,15 +216,12 @@ export function Header({ onNavigate }: HeaderProps) {
                         onNavigate('/c/' + c.slug)
                         setMobileMenu(false)
                       }}
-                      className="flex items-center gap-2 bg-[#13141a] border border-[#1e1f2a] hover:border-[#d4a853]/40 rounded-xl p-3 text-right transition-colors"
+                      className="flex items-center gap-2 rounded-[12px] bg-[#ffffff] ring-1 ring-[#e8e6e0] hover:ring-[#dad7d0] p-3 text-right transition-shadow"
                     >
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ background: `${color}15`, border: `1px solid ${color}33` }}
-                      >
-                        <Icon size={14} style={{ color }} />
-                      </div>
-                      <span className="text-xs text-white truncate">{c.titleFa}</span>
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#faf9f5] ring-1 ring-[#e8e6e0]">
+                        <Icon size={13} className="text-[#5b5755]" />
+                      </span>
+                      <span className="text-xs text-[#141413] truncate">{c.titleFa}</span>
                     </button>
                   )
                 })}
@@ -240,7 +229,7 @@ export function Header({ onNavigate }: HeaderProps) {
             )}
             <button
               type="button"
-              className="w-full flex items-center gap-2 bg-[#16171f] border border-[#252630] rounded-xl h-11 px-4 text-sm text-white mt-3"
+              className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#141413] px-4 text-sm font-medium text-[#faf9f5]"
             >
               <User size={16} />
               ورود / ثبت‌نام
