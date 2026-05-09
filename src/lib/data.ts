@@ -32,20 +32,49 @@ export type Service = {
   inStock: boolean
 }
 
+export type PlanRequiredField = {
+  name: string
+  type: string
+  label: string
+  required: boolean
+}
+
+export type Plan = {
+  id: string
+  serviceId: string
+  titleFa: string
+  titleEn: string | null
+  durationDays: number | null
+  credits: number | null
+  region: string | null
+  accountType: string | null
+  priceIrt: number | null
+  compareAtIrt: number | null
+  isPopular: boolean
+  isActive: boolean
+  sortOrder: number
+  stockStatus: string | null
+  requiredFields: PlanRequiredField[] | null
+  features: Record<string, unknown> | null
+}
+
 type Marketplace = {
   categories: Category[]
   services: Service[]
+  plans: Plan[]
 }
 
 const data = raw as unknown as Marketplace
 
 export const categories: Category[] = data.categories
 export const services: Service[] = data.services
+export const plans: Plan[] = data.plans ?? []
 
 const categoryById = new Map<string, Category>()
 const categoryBySlug = new Map<string, Category>()
 const serviceBySlug = new Map<string, Service>()
 const servicesByCategory = new Map<string, Service[]>()
+const plansByService = new Map<string, Plan[]>()
 
 for (const c of categories) {
   categoryById.set(c.id, c)
@@ -56,6 +85,14 @@ for (const s of services) {
   const arr = servicesByCategory.get(s.categoryId) ?? []
   arr.push(s)
   servicesByCategory.set(s.categoryId, arr)
+}
+for (const p of plans) {
+  const arr = plansByService.get(p.serviceId) ?? []
+  arr.push(p)
+  plansByService.set(p.serviceId, arr)
+}
+for (const arr of plansByService.values()) {
+  arr.sort((a, b) => a.sortOrder - b.sortOrder)
 }
 
 export function getCategoryBySlug(slug: string): Category | undefined {
@@ -76,6 +113,16 @@ export function getServicesByCategory(categoryId: string): Service[] {
 
 export function getCategoryServiceCount(categoryId: string): number {
   return servicesByCategory.get(categoryId)?.length ?? 0
+}
+
+export function getPlansByService(serviceId: string): Plan[] {
+  return plansByService.get(serviceId) ?? []
+}
+
+export function getPlanDiscountPct(p: Plan): number {
+  if (!p.compareAtIrt || !p.priceIrt) return 0
+  if (p.compareAtIrt <= p.priceIrt) return 0
+  return Math.round(((p.compareAtIrt - p.priceIrt) / p.compareAtIrt) * 100)
 }
 
 export function getDiscountPct(s: Service): number {

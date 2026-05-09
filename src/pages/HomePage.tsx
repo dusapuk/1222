@@ -100,37 +100,37 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {topCategories.map((c, idx) => {
               const Icon = iconFor(c.icon)
               const color = colorForCategory(c.slug)
+              const isWide = idx === 3
               return (
                 <button
                   key={c.id}
                   type="button"
                   onClick={() => onNavigate('/c/' + c.slug)}
-                  className={`relative rounded-2xl overflow-hidden cursor-pointer group text-right ${
-                    idx === 3 ? 'col-span-2' : ''
+                  className={`relative rounded-2xl overflow-hidden cursor-pointer group text-right border border-[#1e1f2a] hover:border-[#d4a853]/40 transition-all ${
+                    isWide ? 'col-span-2' : ''
                   }`}
-                  style={{ minHeight: idx === 3 ? 110 : 155 }}
+                  style={{ minHeight: isWide ? 110 : 155 }}
                 >
                   <div
                     className="absolute inset-0"
                     style={{
-                      background: `linear-gradient(135deg, ${color}22 0%, #0e0f15 60%, #0b0c10 100%)`,
+                      background: `radial-gradient(circle at 80% 30%, ${color}55 0%, ${color}22 40%, #0e0f15 75%, #0b0c10 100%)`,
                     }}
                   />
-                  <div className="relative p-5 flex flex-col justify-between h-full">
-                    <div
-                      className="w-9 h-9 rounded-lg flex items-center justify-center"
-                      style={{ background: `${color}25`, border: `1px solid ${color}55` }}
-                    >
-                      <Icon size={18} style={{ color }} />
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-bold mb-1 block" style={{ color }}>
-                        {toPersianDigits(getCategoryServiceCount(c.id))} سرویس
-                      </span>
-                      <span className="text-sm font-bold text-white group-hover:text-[#d4a853] transition-colors line-clamp-1">
-                        {c.titleFa}
-                      </span>
-                    </div>
+                  <Icon
+                    className="absolute -top-3 -right-3 opacity-70 group-hover:opacity-90 group-hover:scale-110 transition-all duration-500 pointer-events-none"
+                    size={isWide ? 130 : 150}
+                    strokeWidth={1.25}
+                    style={{ color }}
+                  />
+                  <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-[#0b0c10] via-[#0b0c10]/80 to-transparent pointer-events-none" />
+                  <div className="relative p-4 flex flex-col justify-end h-full">
+                    <span className="text-[10px] font-bold mb-1 block" style={{ color }}>
+                      {toPersianDigits(getCategoryServiceCount(c.id))} سرویس
+                    </span>
+                    <span className="text-sm font-black text-white group-hover:text-[#d4a853] transition-colors line-clamp-1">
+                      {c.titleFa}
+                    </span>
                   </div>
                 </button>
               )
