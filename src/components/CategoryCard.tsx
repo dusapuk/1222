@@ -1,6 +1,6 @@
 import { ChevronLeft } from 'lucide-react'
 import type { Category } from '../lib/data'
-import { iconFor, colorForCategory } from '../lib/icons'
+import { iconFor, colorForCategory, imageForCategory } from '../lib/icons'
 import { toPersianDigits } from '../lib/format'
 
 export type CategoryCardProps = {
@@ -12,47 +12,94 @@ export type CategoryCardProps = {
 export function CategoryCard({ category, count, onClick }: CategoryCardProps) {
   const Icon = iconFor(category.icon)
   const color = colorForCategory(category.slug)
+  const image = imageForCategory(category.slug)
 
   return (
     <button
       type="button"
       onClick={() => onClick?.(category.slug)}
-      className="group relative aspect-[4/5] rounded-2xl text-right overflow-hidden border border-[#1e1f2a] hover:border-[#d4a853]/40 transition-all focus:outline-none focus:ring-2 focus:ring-[#d4a853]/50"
+      className="group relative block w-full overflow-hidden rounded-2xl bg-[#0e0f15] text-right transition-all focus:outline-none focus:ring-2 focus:ring-[#d4a853]/50"
+      style={{
+        aspectRatio: '5 / 4',
+        boxShadow: `0 1px 0 0 ${color}22, 0 0 0 1px #1e1f2a`,
+      }}
     >
+      <img
+        src={image}
+        alt={category.titleFa}
+        loading="lazy"
+        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+      />
+
+      {/* tinted color veil for cohesion + slight per-category hue */}
       <div
-        className="absolute inset-0"
+        aria-hidden
+        className="absolute inset-0 mix-blend-multiply opacity-50 transition-opacity group-hover:opacity-30"
+        style={{ background: `linear-gradient(135deg, ${color}33 0%, #0b0c10cc 100%)` }}
+      />
+
+      {/* readability gradient bottom -> top */}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 bottom-0 h-3/4"
         style={{
-          background: `radial-gradient(circle at 70% 30%, ${color}55 0%, ${color}22 35%, #0e0f15 75%, #0b0c10 100%)`,
+          background:
+            'linear-gradient(to top, rgba(8,9,14,0.96) 0%, rgba(8,9,14,0.78) 35%, rgba(8,9,14,0.18) 75%, rgba(8,9,14,0) 100%)',
         }}
       />
 
-      <Icon
-        className="absolute -top-4 -right-4 opacity-70 group-hover:opacity-90 group-hover:scale-110 transition-all duration-500 pointer-events-none"
-        size={220}
-        strokeWidth={1.25}
-        style={{ color }}
+      {/* top-left accent bar */}
+      <span
+        aria-hidden
+        className="absolute top-4 right-4 h-7 w-1 rounded-full"
+        style={{ background: color }}
       />
 
-      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#0b0c10] via-[#0b0c10]/85 to-transparent pointer-events-none" />
+      {/* icon chip top-right */}
+      <div
+        className="absolute top-4 left-4 flex h-9 w-9 items-center justify-center rounded-xl backdrop-blur-md transition-transform group-hover:scale-110"
+        style={{
+          background: `${color}26`,
+          border: `1px solid ${color}66`,
+          boxShadow: `0 4px 18px -6px ${color}88`,
+        }}
+      >
+        <Icon size={18} style={{ color }} />
+      </div>
 
-      <div className="absolute inset-0 p-5 flex flex-col justify-end">
-        <h3 className="font-black text-lg text-white mb-1.5 line-clamp-1 group-hover:text-[#d4a853] transition-colors">
+      {/* hover-only golden border ring */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity group-hover:opacity-100"
+        style={{ boxShadow: 'inset 0 0 0 1.5px rgba(212,168,83,0.55)' }}
+      />
+
+      {/* content */}
+      <div className="relative flex h-full flex-col justify-end p-4 sm:p-5">
+        {category.titleEn && (
+          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">
+            {category.titleEn}
+          </span>
+        )}
+        <h3 className="mb-3 text-xl font-black leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] sm:text-2xl">
           {category.titleFa}
         </h3>
-        {category.description && (
-          <p className="text-xs text-[#9a9baa] leading-6 line-clamp-2 mb-4">
-            {category.description}
-          </p>
-        )}
-        <div className="flex items-center justify-between pt-3 border-t border-white/10">
-          <span className="text-[11px] text-[#c4c5d0] font-medium">
+        <div className="flex items-center justify-between">
+          <span
+            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-bold backdrop-blur-md"
+            style={{
+              background: `${color}26`,
+              color,
+              border: `1px solid ${color}55`,
+            }}
+          >
             {toPersianDigits(count)} سرویس
           </span>
-          <span className="flex items-center gap-1 text-xs text-[#d4a853] font-medium">
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-white/85 transition-colors group-hover:text-[#d4a853]">
             مشاهده
             <ChevronLeft
               size={14}
-              className="group-hover:-translate-x-1 transition-transform"
+              className="transition-transform group-hover:-translate-x-1"
             />
           </span>
         </div>

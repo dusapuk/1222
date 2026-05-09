@@ -15,7 +15,7 @@ import { FilterPanel } from '../components/FilterPanel'
 import { SortSelect } from '../components/SortSelect'
 import { Pagination } from '../components/Pagination'
 import { Breadcrumbs } from '../components/Breadcrumbs'
-import { iconFor, colorForCategory } from '../lib/icons'
+import { iconFor, colorForCategory, imageForCategory } from '../lib/icons'
 import { toPersianDigits } from '../lib/format'
 
 export type CategoryPageProps = {
@@ -114,6 +114,7 @@ export function CategoryPage({
 
   const Icon = iconFor(category.icon)
   const color = colorForCategory(category.slug)
+  const image = imageForCategory(category.slug)
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-5">
@@ -125,37 +126,76 @@ export function CategoryPage({
         onNavigate={onNavigate}
       />
 
-      <header className="mt-5 mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: `${color}15`, border: `1px solid ${color}33` }}
-          >
-            <Icon size={22} style={{ color }} />
+      <header
+        className="relative mt-5 mb-6 overflow-hidden rounded-2xl ring-1 ring-[#1e1f2a]"
+        style={{ minHeight: 220 }}
+      >
+        <img
+          src={image}
+          alt={category.titleFa}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div
+          aria-hidden
+          className="absolute inset-0 mix-blend-multiply"
+          style={{ background: `linear-gradient(135deg, ${color}40 0%, #0b0c10cc 100%)` }}
+        />
+        <div
+          aria-hidden
+          className="absolute inset-x-0 bottom-0 h-3/4"
+          style={{
+            background:
+              'linear-gradient(to top, rgba(8,9,14,0.96) 0%, rgba(8,9,14,0.7) 35%, rgba(8,9,14,0.18) 75%, rgba(8,9,14,0) 100%)',
+          }}
+        />
+        <div className="relative flex flex-col gap-4 p-5 md:flex-row md:items-end md:justify-between md:p-7">
+          <div className="flex items-center gap-3">
+            <div
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl backdrop-blur-md"
+              style={{
+                background: `${color}30`,
+                border: `1px solid ${color}66`,
+                boxShadow: `0 6px 22px -8px ${color}aa`,
+              }}
+            >
+              <Icon size={22} style={{ color }} />
+            </div>
+            <div>
+              {category.titleEn && (
+                <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">
+                  {category.titleEn}
+                </span>
+              )}
+              <h1 className="text-2xl font-black leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] md:text-3xl">
+                {category.titleFa}
+              </h1>
+              <p className="mt-1 line-clamp-1 text-xs text-white/70">
+                {category.description ?? `${toPersianDigits(all.length)} سرویس`}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-black text-white leading-tight">
-              {category.titleFa}
-            </h1>
-            <p className="text-xs text-[#8a8b96] mt-1 line-clamp-1">
-              {category.description ?? `${toPersianDigits(all.length)} سرویس`}
-            </p>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-[#8a8b96] bg-[#13141a] border border-[#1e1f2a] px-3 py-2 rounded-xl">
-            {toPersianDigits(filtered.length)} از {toPersianDigits(all.length)} سرویس
-          </span>
-          <SortSelect value={sort} onChange={setSort} />
-          <button
-            type="button"
-            onClick={() => setDrawerOpen(true)}
-            className="lg:hidden flex items-center gap-2 bg-[#13141a] border border-[#252630] hover:border-[#d4a853]/40 text-sm text-white rounded-xl h-10 px-4 transition-colors"
-          >
-            <SlidersHorizontal size={14} />
-            فیلترها
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className="rounded-xl px-3 py-2 text-xs font-bold backdrop-blur-md"
+              style={{
+                background: `${color}26`,
+                color,
+                border: `1px solid ${color}55`,
+              }}
+            >
+              {toPersianDigits(filtered.length)} از {toPersianDigits(all.length)} سرویس
+            </span>
+            <SortSelect value={sort} onChange={setSort} />
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(true)}
+              className="lg:hidden flex items-center gap-2 bg-[#13141a]/80 backdrop-blur-md border border-[#252630] hover:border-[#d4a853]/40 text-sm text-white rounded-xl h-10 px-4 transition-colors"
+            >
+              <SlidersHorizontal size={14} />
+              فیلترها
+            </button>
+          </div>
         </div>
       </header>
 
