@@ -41,15 +41,30 @@ export function HomePage({ onNavigate }: HomePageProps) {
       <section className="max-w-7xl mx-auto px-4 pt-6 pb-2">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
           <div
-            className="lg:col-span-7 relative rounded-2xl overflow-hidden group cursor-pointer"
+            className="lg:col-span-7 relative rounded-2xl overflow-hidden group cursor-pointer ring-1 ring-[#1e1f2a]"
             style={{ minHeight: 320 }}
             onClick={() => onNavigate('/categories')}
           >
+            <img
+              src="/images/home/hero-premium.jpg"
+              alt=""
+              aria-hidden
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
             <div
+              aria-hidden
               className="absolute inset-0"
               style={{
                 background:
-                  'radial-gradient(circle at 30% 50%, rgba(212,168,83,0.18), transparent 50%), radial-gradient(circle at 80% 80%, rgba(155,93,229,0.15), transparent 50%), linear-gradient(135deg, #0e0f15 0%, #13141a 50%, #0b0c10 100%)',
+                  'linear-gradient(270deg, rgba(11,12,16,0.94) 0%, rgba(11,12,16,0.78) 45%, rgba(11,12,16,0.35) 75%, rgba(11,12,16,0.1) 100%)',
+              }}
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  'radial-gradient(circle at 30% 50%, rgba(212,168,83,0.18), transparent 50%), radial-gradient(circle at 80% 80%, rgba(155,93,229,0.18), transparent 50%)',
               }}
             />
             <div className="relative p-8 flex flex-col justify-between h-full" style={{ minHeight: 320 }}>
@@ -171,26 +186,78 @@ export function HomePage({ onNavigate }: HomePageProps) {
       <section className="max-w-7xl mx-auto px-4 py-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { icon: Zap, title: 'تحویل آنی', desc: 'دریافت در کمتر از ۳۰ ثانیه', color: '#d4a853' },
-            { icon: Shield, title: 'ضمانت اصالت', desc: 'کدها و اکانت‌های اورجینال', color: '#2ec4b6' },
-            { icon: Headphones, title: 'پشتیبانی ۲۴/۷', desc: 'پاسخگویی شبانه روزی', color: '#9b5de5' },
-            { icon: CreditCard, title: 'پرداخت امن', desc: 'درگاه بانکی معتبر', color: '#06d6a0' },
+            {
+              icon: Zap,
+              title: 'تحویل آنی',
+              desc: 'دریافت در کمتر از ۳۰ ثانیه',
+              color: '#d4a853',
+              image: '/images/home/trust-zap.jpg',
+            },
+            {
+              icon: Shield,
+              title: 'ضمانت اصالت',
+              desc: 'کدها و اکانت‌های اورجینال',
+              color: '#2ec4b6',
+              image: '/images/home/trust-shield.jpg',
+            },
+            {
+              icon: Headphones,
+              title: 'پشتیبانی ۲۴/۷',
+              desc: 'پاسخگویی شبانه روزی',
+              color: '#9b5de5',
+              image: '/images/home/trust-headphones.jpg',
+            },
+            {
+              icon: CreditCard,
+              title: 'پرداخت امن',
+              desc: 'درگاه بانکی معتبر',
+              color: '#06d6a0',
+              image: '/images/home/trust-card.jpg',
+            },
           ].map((it) => {
             const I = it.icon
             return (
               <div
                 key={it.title}
-                className="bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-4 flex items-center gap-3"
+                className="relative overflow-hidden bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-4 flex items-center gap-3 group"
               >
+                <img
+                  src={it.image}
+                  alt=""
+                  aria-hidden
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover opacity-50 transition-transform duration-700 group-hover:scale-105"
+                />
                 <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: `${it.color}15`, border: `1px solid ${it.color}33` }}
+                  aria-hidden
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      'linear-gradient(270deg, rgba(19,20,26,0.96) 0%, rgba(19,20,26,0.82) 50%, rgba(19,20,26,0.55) 80%, rgba(19,20,26,0.35) 100%)',
+                  }}
+                />
+                <div
+                  aria-hidden
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: `radial-gradient(circle at 90% 50%, ${it.color}26, transparent 55%)`,
+                  }}
+                />
+                <div
+                  className="relative w-11 h-11 rounded-xl flex items-center justify-center shrink-0 backdrop-blur-md"
+                  style={{
+                    background: `${it.color}26`,
+                    border: `1px solid ${it.color}55`,
+                    boxShadow: `0 4px 18px -8px ${it.color}aa`,
+                  }}
                 >
                   <I size={20} style={{ color: it.color }} />
                 </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-bold text-white mb-0.5 truncate">{it.title}</div>
-                  <div className="text-[11px] text-[#6b6c78] truncate">{it.desc}</div>
+                <div className="relative min-w-0">
+                  <div className="text-sm font-bold text-white mb-0.5 truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
+                    {it.title}
+                  </div>
+                  <div className="text-[11px] text-[#c4c5d0] truncate">{it.desc}</div>
                 </div>
               </div>
             )
