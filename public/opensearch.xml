@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription
+  xmlns="http://a9.com/-/spec/opensearch/1.1/"
+  xmlns:moz="http://www.mozilla.org/2006/browser/search/">
+  <ShortName>پی‌کارت</ShortName>
+  <LongName>پی‌کارت — مارکت‌پلیس سرویس‌های دیجیتال</LongName>
+  <Description>جستجوی اشتراک‌های دیجیتال، اکانت‌های پرمیوم، گیفت‌کارت و سرویس‌های هوش مصنوعی در پی‌کارت.</Description>
+  <InputEncoding>UTF-8</InputEncoding>
+  <Image width="32" height="32" type="image/png">https://pikart.ir/icons/icon-32.png</Image>
+  <Image width="192" height="192" type="image/png">https://pikart.ir/icons/icon-192.png</Image>
+  <Url type="text/html" method="get" template="https://pikart.ir/search?q={searchTerms}"/>
+  <moz:SearchForm>https://pikart.ir/search</moz:SearchForm>
+  <Url type="application/opensearchdescription+xml" rel="self" template="https://pikart.ir/opensearch.xml"/>
+  <Language>fa-IR</Language>
+  <SyndicationRight>open</SyndicationRight>
+  <AdultContent>false</AdultContent>
+  <Developer>پی‌کارت</Developer>
+</OpenSearchDescription>

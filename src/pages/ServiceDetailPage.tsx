@@ -22,6 +22,7 @@ import {
   getDiscountPct,
   getPlansByService,
   getPlanDiscountPct,
+  getCachedServiceDetail,
   loadServiceDetail,
   type Plan,
   type Service,
@@ -70,8 +71,13 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
 
   // Lazy-loaded long description, FAQ and SEO overrides for THIS slug.
   // Kept as a separate fetch from the main catalogue so browse pages
-  // don't pay for it.
-  const [detail, setDetail] = useState<ServiceDetail | null>(null)
+  // don't pay for it. The prerender step seeds the sync cache with the
+  // matching `<script id="__SERVICE_DETAIL__">` payload, so SSR and the
+  // first hydration paint render the same tree (no mismatch warning).
+  const [detail, setDetail] = useState<ServiceDetail | null>(() => {
+    const seeded = getCachedServiceDetail(slug)
+    return seeded ?? null
+  })
   useEffect(() => {
     let cancelled = false
     if (!service) {
@@ -139,7 +145,7 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
                   alt={`خرید ${service.titleFa}${service.titleEn ? ' – ' + service.titleEn : ''}`}
                   width={560}
                   height={560}
-                  fetchPriority="high"
+                  {...({ fetchpriority: 'high' } as Record<string, string>)}
                   decoding="async"
                   className="absolute inset-0 w-full h-full object-cover"
                   onError={(e) => {
@@ -217,7 +223,11 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
               <div className="w-14 h-14 rounded-xl bg-[#0e0f15] border border-[#1e1f2a] flex items-center justify-center shrink-0 overflow-hidden p-2">
                 <img
                   src={service.logoUrl ?? FALLBACK}
-                  alt=""
+                  alt={`${service.titleFa} — لوگو`}
+                  width={56}
+                  height={56}
+                  loading="lazy"
+                  decoding="async"
                   className="max-w-full max-h-full object-contain"
                 />
               </div>

@@ -4,7 +4,7 @@
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/((?!api/|assets/|images/|imported-images/|icons/|favicon.svg|favicon.ico|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest).*)",
+      "source": "/((?!api/|assets/|images/|imported-images/|icons/|fonts/|data/|\\.well-known/|favicon.svg|favicon.ico|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|sw\\.js|opensearch\\.xml|humans\\.txt).*)",
       "destination": "/index.html"
     }
   ],
@@ -37,6 +37,25 @@
       "source": "/(.*\\.(?:png|jpg|jpeg|webp|avif|gif|svg|ico|woff2?))",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "Service-Worker-Allowed", "value": "/" }
+      ]
+    },
+    {
+      "source": "/.well-known/security.txt",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" }
+      ]
+    },
+    {
+      "source": "/opensearch.xml",
+      "headers": [
+        { "key": "Content-Type", "value": "application/opensearchdescription+xml" }
       ]
     }
   ]

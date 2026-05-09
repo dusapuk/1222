@@ -1,29 +1,34 @@
 /**
  * Build-time SEO prerender.
  *
- * After `vite build`, this script reads `dist/index.html` as a template and
- * emits a per-route HTML file with the correct title / meta / canonical /
- * OG / Twitter / hreflang / JSON-LD already inlined in the <head>.
+ * After `vite build` and `vite build --ssr`, this script reads
+ * `dist/index.html` as a template and emits a per-route HTML file with:
+ *   - the correct title / meta / canonical / OG / Twitter / hreflang /
+ *     JSON-LD already inlined in <head>, and
+ *   - the React tree fully rendered into `<div id="root">` via
+ *     `renderToString` (loaded from `dist-ssr/entry-server.js`), plus
+ *     a `<script id="__SERVICE_DETAIL__">` payload that lets the
+ *     client hydrate without re-fetching the same data.
  *
- * The page body still mounts the React app on the client, so behaviour after
- * hydration is unchanged. The point is to make first-byte HTML correct for:
+ * The result is real first-byte HTML for:
  *   - social previews (Telegram/Slack/Twitter ignore JS-injected meta)
  *   - search engines that cache pre-JS HTML for ranking signals
- *   - bots without a JS engine
+ *   - bots without a JS engine (Bingbot, Yandexbot, ...)
  *
  * Routes prerendered:
  *   - /                  (home)
  *   - /categories        (categories index)
  *   - /c/<slug>          (every category)
  *   - /s/<slug>          (every service)
+ *   - /<static>          (about, contact, privacy, terms, refund, faq, guide)
  *   - /404               (noindex stub for SPA fallback hosts)
  *
- * Usage: invoked by `npm run build`'s postbuild hook. Can also run manually:
+ * Usage: invoked by `npm run build`. Can also run manually:
  *   npx tsx scripts/prerender.ts
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import {
   seoForCategoriesIndex,
@@ -47,7 +52,7 @@ import {
   imageMimeFor,
 } from '../src/lib/seo'
 import type { SEOConfig } from '../src/hooks/useSEO'
-import type { Category, Plan, Service, ServiceDetail } from '../src/lib/data'
+import type { Category, Marketplace, Plan, Service, ServiceDetail } from '../src/lib/data'
 
 // Hero image per category — inlined here to avoid pulling lucide-react
 // (and thus the JSX runtime) into the Node prerender script.
@@ -74,11 +79,30 @@ function imageForCategory(slug: string): string | null {
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(__dirname, '..')
 const distDir = resolve(repoRoot, 'dist')
+const ssrDir = resolve(repoRoot, 'dist-ssr')
 const templatePath = resolve(distDir, 'index.html')
+const ssrEntryPath = resolve(ssrDir, 'entry-server.js')
 
 if (!existsSync(templatePath)) {
   console.error('[prerender] dist/index.html not found — run `vite build` first.')
   process.exit(1)
+}
+if (!existsSync(ssrEntryPath)) {
+  console.error(
+    '[prerender] dist-ssr/entry-server.js not found — run `vite build --ssr src/entry-server.tsx --outDir dist-ssr` first.',
+  )
+  process.exit(1)
+}
+
+// Dynamic ESM import of the SSR bundle. We use pathToFileURL because Node's
+// ESM loader rejects bare absolute paths on Windows.
+const ssrModule = (await import(pathToFileURL(ssrEntryPath).href)) as {
+  render: (input: {
+    path: string
+    params?: Record<string, string>
+    marketplace: Marketplace
+    serviceDetail?: ServiceDetail | null
+  }) => { html: string }
 }
 
 const marketplace = JSON.parse(
@@ -103,7 +127,15 @@ for (const p of marketplace.plans) {
 
 const template = readFileSync(templatePath, 'utf8')
 
-type Route = { path: string; outFile: string; seo: SEOConfig }
+type Route = {
+  path: string
+  outFile: string
+  seo: SEOConfig
+  /** Optional per-service detail to seed before SSR render. */
+  serviceDetail?: ServiceDetail | null
+  /** When true, do not run SSR for this route (kept as a spinner stub). */
+  skipSsr?: boolean
+}
 
 function fileFor(routePath: string): string {
   if (routePath === '/' || routePath === '') return resolve(distDir, 'index.html')
@@ -182,6 +214,7 @@ for (const service of marketplace.services) {
     path: `/s/${service.slug}`,
     outFile: fileFor(`/s/${service.slug}`),
     seo: seoForService({ service, category, plans, cheapest, detail }),
+    serviceDetail: detail,
   })
 }
 
@@ -296,8 +329,28 @@ function buildHead(seo: SEOConfig): {
   return { title: finalTitle, description: desc, canonical, tags, jsonLd }
 }
 
-function applyTemplate(template: string, seo: SEOConfig): string {
-  const head = buildHead(seo)
+/**
+ * Pattern that matches the SSR outlet block in `index.html`, including
+ * the surrounding `<!--ssr-outlet-start-->` / `<!--ssr-outlet-end-->`
+ * comment markers. Anything between (typically the loading-spinner stub)
+ * is replaced with the React tree rendered by `ssrModule.render()`.
+ */
+const ROOT_SLOT_RE = /<!--ssr-outlet-start-->[\s\S]*?<!--ssr-outlet-end-->/
+
+function buildRootMarkup(bodyHtml: string): string {
+  return `<div id="root">${bodyHtml}</div>`
+}
+
+function buildBootstrapScript(serviceDetail: ServiceDetail | null | undefined): string {
+  if (!serviceDetail) return ''
+  // JSON in a <script type=application/json> still has to escape "<" so a
+  // literal "</script>" in the payload cannot close the surrounding tag.
+  const safeJson = JSON.stringify(serviceDetail).replace(/</g, '\\u003c')
+  return `<script id="__SERVICE_DETAIL__" type="application/json">${safeJson}</script>`
+}
+
+function applyTemplate(template: string, route: Route): string {
+  const head = buildHead(route.seo)
   let html = template
 
   // 1) Replace <title> body
@@ -318,15 +371,55 @@ function applyTemplate(template: string, seo: SEOConfig): string {
   const insert = ['', ...head.tags, ...head.jsonLd, ''].join('\n    ')
   html = html.replace(/<\/head>/, `${insert}</head>`)
 
+  // 3) Replace the loading-spinner placeholder with the SSR'd React tree
+  //    plus an inlined per-service detail payload that the client uses to
+  //    seed `getCachedServiceDetail()` *before* hydration runs.
+  if (!route.skipSsr) {
+    const params = paramsFromRoute(route)
+    let bodyHtml = ''
+    try {
+      bodyHtml = ssrModule.render({
+        path: route.path,
+        params,
+        marketplace,
+        serviceDetail: route.serviceDetail,
+      }).html
+    } catch (err) {
+      console.warn(`[prerender] SSR failed for ${route.path}:`, err)
+      bodyHtml = ''
+    }
+
+    if (bodyHtml) {
+      const bootstrap = buildBootstrapScript(route.serviceDetail)
+      const replacement = bootstrap
+        ? `${buildRootMarkup(bodyHtml)}\n    ${bootstrap}`
+        : buildRootMarkup(bodyHtml)
+      const replaced = html.replace(ROOT_SLOT_RE, replacement)
+      if (replaced !== html) html = replaced
+    }
+  }
+
   return html
 }
 
+function paramsFromRoute(route: Route): Record<string, string> | undefined {
+  // Only pagination is part of the prerendered URL set today (page=1 is
+  // canonical-stripped). When we extend to per-page prerender, populate
+  // this with the right query string per route.
+  void route
+  return undefined
+}
+
+let writtenSsr = 0
 let written = 0
 for (const route of routes) {
-  const html = applyTemplate(template, route.seo)
+  const html = applyTemplate(template, route)
   mkdirSync(dirname(route.outFile), { recursive: true })
   writeFileSync(route.outFile, html, 'utf8')
   written++
+  if (!route.skipSsr) writtenSsr++
 }
 
-console.log(`[prerender] wrote ${written} HTML files (${routes.length} routes)`)
+console.log(
+  `[prerender] wrote ${written} HTML files (${writtenSsr} with SSR body, ${routes.length} routes)`,
+)

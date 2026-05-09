@@ -1,5 +1,6 @@
 import './App.css'
 import { useRoute } from './hooks/useRoute'
+import { Analytics } from './components/Analytics'
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'
 import { HomePage } from './pages/HomePage'
@@ -31,8 +32,23 @@ function parseNumOrNull(v: string | null): number | null {
   return Number.isFinite(n) ? n : null
 }
 
-function App() {
-  const { route, navigate, setParams } = useRoute()
+export type AppProps = {
+  /**
+   * Initial route consumed by the SSR / prerender pass so the
+   * server-rendered tree matches the URL the static HTML targets.
+   * The browser entry leaves this undefined and `useRoute` falls
+   * back to `window.location`.
+   */
+  initialPath?: string
+  initialParams?: Record<string, string>
+}
+
+function App({ initialPath, initialParams }: AppProps = {}) {
+  const { route, navigate, setParams } = useRoute(
+    initialPath !== undefined || initialParams !== undefined
+      ? { path: initialPath, params: initialParams }
+      : null,
+  )
 
   const renderRoute = () => {
     const path = route.path
@@ -98,6 +114,7 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ fontFamily: "'Vazirmatn', sans-serif" }}>
+      <Analytics currentPath={route.path} />
       <Header onNavigate={navigate} />
       <main className="flex-1">{renderRoute()}</main>
       <Footer onNavigate={navigate} />
