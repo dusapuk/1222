@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Disallow: /search
+Disallow: /search?
+Disallow: /*?q=
+Disallow: /404
+
+Sitemap: https://pikart.ir/sitemap.xml
