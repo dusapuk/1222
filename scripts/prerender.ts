@@ -31,7 +31,9 @@ import {
   seoForHome,
   seoForNotFound,
   seoForService,
+  seoForStaticPage,
 } from '../src/lib/seoConfig'
+import { STATIC_PAGES } from '../src/lib/staticPages'
 import {
   DEFAULT_DESCRIPTION,
   DEFAULT_OG_IMAGE,
@@ -131,6 +133,10 @@ routes.push({
   }),
 })
 
+// Must mirror PAGE_SIZE in src/pages/CategoryPage.tsx so rel=next
+// targets the same paginated routes the client side router emits.
+const CATEGORY_PAGE_SIZE = 24
+
 for (const category of marketplace.categories) {
   if (!category.slug) continue
   const services = (servicesByCategory.get(category.id) ?? []).sort(
@@ -138,6 +144,7 @@ for (const category of marketplace.categories) {
       Number(b.isFeatured) - Number(a.isFeatured) ||
       Number(b.isPopular) - Number(a.isPopular),
   )
+  const pageCount = Math.max(1, Math.ceil(services.length / CATEGORY_PAGE_SIZE))
   routes.push({
     path: `/c/${category.slug}`,
     outFile: fileFor(`/c/${category.slug}`),
@@ -145,6 +152,8 @@ for (const category of marketplace.categories) {
       category,
       services,
       categoryImage: imageForCategory(category.slug),
+      page: 1,
+      pageCount,
     }),
   })
 }
@@ -173,6 +182,14 @@ for (const service of marketplace.services) {
     path: `/s/${service.slug}`,
     outFile: fileFor(`/s/${service.slug}`),
     seo: seoForService({ service, category, plans, cheapest, detail }),
+  })
+}
+
+for (const page of STATIC_PAGES) {
+  routes.push({
+    path: page.path,
+    outFile: fileFor(page.path),
+    seo: seoForStaticPage(page),
   })
 }
 
@@ -251,6 +268,22 @@ function buildHead(seo: SEOConfig): {
     linkTag('alternate', canonical, { hreflang: 'fa-IR' }),
     linkTag('alternate', canonical, { hreflang: 'x-default' }),
   )
+
+  if (seo.linkRelPrev) tags.push(linkTag('prev', seo.linkRelPrev))
+  if (seo.linkRelNext) tags.push(linkTag('next', seo.linkRelNext))
+
+  // Per-page LCP image preload — for product pages the hero is the
+  // service logo, which is also the og:image. Preloading it lets the
+  // browser fetch it in parallel with the JS bundle and shaves
+  // 300-600ms off LCP on the detail route.
+  if (seo.image && seo.ogType === 'product') {
+    const preloadAttrs: Record<string, string> = {
+      as: 'image',
+      fetchpriority: 'high',
+    }
+    if (imgMime) preloadAttrs.type = imgMime
+    tags.push(linkTag('preload', img, preloadAttrs))
+  }
 
   const jsonLd: string[] = []
   for (const payload of seo.jsonLd ?? []) {

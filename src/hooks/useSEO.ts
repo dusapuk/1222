@@ -35,6 +35,10 @@ export type SEOConfig = {
   noindex?: boolean
   /** Optional list of JSON-LD payloads to inject. */
   jsonLd?: Array<Record<string, unknown> | null>
+  /** Absolute URL for `<link rel="next">` (paginated indexes). */
+  linkRelNext?: string | null
+  /** Absolute URL for `<link rel="prev">` (paginated indexes). */
+  linkRelPrev?: string | null
 }
 
 /**
@@ -55,6 +59,8 @@ export function useSEO(config: SEOConfig): void {
     ogType = 'website',
     noindex = false,
     jsonLd,
+    linkRelNext,
+    linkRelPrev,
   } = config
 
   // Stable serialisation so we only re-inject when the actual payload
@@ -106,6 +112,11 @@ export function useSEO(config: SEOConfig): void {
     setLink('alternate', canonical, { hreflang: 'fa-IR' })
     setLink('alternate', canonical, { hreflang: 'x-default' })
 
+    // rel=next / rel=prev for paginated category indexes. Removed when
+    // not provided so they don't carry over from the previous route.
+    setOrRemoveLink('next', linkRelNext)
+    setOrRemoveLink('prev', linkRelPrev)
+
     const payloads: Array<Record<string, unknown>> = jsonLdKey
       ? (JSON.parse(jsonLdKey) ?? []).filter(
           (x: unknown): x is Record<string, unknown> => Boolean(x),
@@ -130,6 +141,8 @@ export function useSEO(config: SEOConfig): void {
     ogType,
     noindex,
     jsonLdKey,
+    linkRelNext,
+    linkRelPrev,
   ])
 }
 
@@ -159,6 +172,23 @@ function setLink(rel: string, href: string, attrs: Record<string, string> = {}):
     document.head.appendChild(el)
   }
   if (el.getAttribute('href') !== href) el.setAttribute('href', href)
+}
+
+function setOrRemoveLink(rel: string, href: string | null | undefined): void {
+  const sel = `link[rel="${cssEscape(rel)}"]`
+  const el = document.head.querySelector<HTMLLinkElement>(sel)
+  if (href) {
+    if (el) {
+      if (el.getAttribute('href') !== href) el.setAttribute('href', href)
+    } else {
+      const link = document.createElement('link')
+      link.setAttribute('rel', rel)
+      link.setAttribute('href', href)
+      document.head.appendChild(link)
+    }
+  } else if (el) {
+    el.parentNode?.removeChild(el)
+  }
 }
 
 function injectJsonLd(payload: Record<string, unknown>, id: string): () => void {

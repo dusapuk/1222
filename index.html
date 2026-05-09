@@ -59,12 +59,14 @@
          the React app can render as soon as both arrive. -->
     <link rel="preload" as="fetch" type="application/json" href="/data/marketplace.json" />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;200;300;400;500;600;700;800;900&display=swap"
-      rel="stylesheet"
-    />
+    <!--
+      Self-hosted Vazirmatn (see src/index.css). We preload the two
+      weights used in the initial paint (regular body 400 + bold 700)
+      so the browser starts fetching them in parallel with the JS
+      bundle and CSS, eliminating the FOUT/CLS pop on first render.
+    -->
+    <link rel="preload" href="/fonts/vazirmatn-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/vazirmatn-700.woff2" as="font" type="font/woff2" crossorigin />
 
     <!--
       GitHub Pages SPA bootstrap. If we were redirected from `404.html`

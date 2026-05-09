@@ -7,11 +7,29 @@ import {
   CreditCard,
   RotateCcw,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { categories } from '../lib/data'
+import { ENAMAD_IFRAME_HTML, SOCIAL_LINKS, type SocialNetwork } from '../lib/seo'
 
-const footerLinks = {
-  support: ['سوالات متداول', 'راهنمای خرید', 'شرایط بازگشت وجه', 'تماس با ما', 'درباره ما'],
-  legal: ['قوانین و مقررات', 'حریم خصوصی', 'شرایط استفاده'],
+const supportLinks: { label: string; path: string }[] = [
+  { label: 'سوالات متداول', path: '/faq' },
+  { label: 'راهنمای خرید', path: '/guide' },
+  { label: 'شرایط بازگشت وجه', path: '/refund' },
+  { label: 'تماس با ما', path: '/contact' },
+  { label: 'درباره ما', path: '/about' },
+]
+
+const legalLinks: { label: string; path: string }[] = [
+  { label: 'قوانین و مقررات', path: '/terms' },
+  { label: 'حریم خصوصی', path: '/privacy' },
+  { label: 'شرایط استفاده', path: '/terms' },
+]
+
+const socialIcon: Record<SocialNetwork, LucideIcon> = {
+  instagram: Instagram,
+  twitter: Twitter,
+  telegram: Send,
+  whatsapp: MessageCircle,
 }
 
 export type FooterProps = {
@@ -19,6 +37,9 @@ export type FooterProps = {
 }
 
 export function Footer({ onNavigate }: FooterProps) {
+  const visibleSocial = SOCIAL_LINKS.filter((s) => s.url.trim().length > 0)
+  const enamadAvailable = ENAMAD_IFRAME_HTML.trim().length > 0
+
   return (
     <footer className="bg-[#0a0b0e] border-t border-[#1a1b26] mt-12">
       <div className="max-w-7xl mx-auto px-4 py-12">
@@ -43,17 +64,25 @@ export function Footer({ onNavigate }: FooterProps) {
             <p className="text-sm text-[#6b6c78] leading-7 mb-4 max-w-sm">
               پی‌کارت، بزرگ‌ترین مارکت‌پلیس خرید گیفت کارت و اشتراک سرویس‌های بین‌المللی در ایران. تحویل آنی، ضمانت اصالت و پشتیبانی ۲۴ ساعته.
             </p>
-            <div className="flex items-center gap-3">
-              {[Instagram, Twitter, Send, MessageCircle].map((I, i) => (
-                <a
-                  key={i}
-                  href="#"
-                  className="w-9 h-9 bg-[#16171f] rounded-lg flex items-center justify-center text-[#6b6c78] hover:text-[#d4a853] hover:bg-[#1e1f2a] transition-all"
-                >
-                  <I size={16} />
-                </a>
-              ))}
-            </div>
+            {visibleSocial.length > 0 && (
+              <div className="flex items-center gap-3">
+                {visibleSocial.map((s) => {
+                  const I = socialIcon[s.network]
+                  return (
+                    <a
+                      key={s.network}
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={s.labelFa}
+                      className="w-9 h-9 bg-[#16171f] rounded-lg flex items-center justify-center text-[#6b6c78] hover:text-[#d4a853] hover:bg-[#1e1f2a] transition-all"
+                    >
+                      <I size={16} />
+                    </a>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           <div className="md:col-span-3">
@@ -76,11 +105,15 @@ export function Footer({ onNavigate }: FooterProps) {
           <div className="md:col-span-2">
             <h4 className="font-bold text-sm text-white mb-4">پشتیبانی</h4>
             <ul className="space-y-2.5">
-              {footerLinks.support.map((link) => (
-                <li key={link}>
-                  <a href="#" className="text-sm text-[#6b6c78] hover:text-[#d4a853] transition-colors">
-                    {link}
-                  </a>
+              {supportLinks.map((link) => (
+                <li key={link.path}>
+                  <button
+                    type="button"
+                    onClick={() => onNavigate(link.path)}
+                    className="text-sm text-[#6b6c78] hover:text-[#d4a853] transition-colors text-right"
+                  >
+                    {link.label}
+                  </button>
                 </li>
               ))}
             </ul>
@@ -93,7 +126,7 @@ export function Footer({ onNavigate }: FooterProps) {
                 {
                   icon: Shield,
                   label: 'نماد اعتماد الکترونیکی',
-                  hint: 'enamad.ir',
+                  hint: enamadAvailable ? 'enamad.ir' : 'در حال ثبت',
                   color: '#2ec4b6',
                 },
                 {
@@ -137,13 +170,26 @@ export function Footer({ onNavigate }: FooterProps) {
                 )
               })}
             </ul>
+            {enamadAvailable && (
+              <div
+                className="mb-4 inline-flex"
+                // E-Namad provides a small `<a>...</a>` snippet whose content
+                // and merchant id we can't safely express in JSX. Inserting
+                // the raw HTML is the documented embed method.
+                dangerouslySetInnerHTML={{ __html: ENAMAD_IFRAME_HTML }}
+              />
+            )}
             <h4 className="font-bold text-sm text-white mb-3">قوانین</h4>
             <ul className="space-y-2 text-xs text-[#6b6c78]">
-              {footerLinks.legal.map((link) => (
-                <li key={link}>
-                  <a href="#" className="hover:text-[#d4a853] transition-colors">
-                    {link}
-                  </a>
+              {legalLinks.map((link) => (
+                <li key={link.label}>
+                  <button
+                    type="button"
+                    onClick={() => onNavigate(link.path)}
+                    className="hover:text-[#d4a853] transition-colors text-right"
+                  >
+                    {link.label}
+                  </button>
                 </li>
               ))}
             </ul>

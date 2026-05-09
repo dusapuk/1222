@@ -19,6 +19,46 @@ export const DEFAULT_OG_IMAGE = '/images/og/og-default.svg'
 export const TWITTER_HANDLE = '@pikart_ir'
 
 /**
+ * Public social-media URLs the operator has chosen to publicly associate
+ * with the brand. Used both:
+ *   - as the `sameAs` array in the Organization JSON-LD (E-E-A-T signal
+ *     — Google can confirm "this is the same entity" across the web), and
+ *   - to render the social-icon row in the Footer.
+ *
+ * Add real, public URLs here. Entries with an empty `url` are skipped
+ * everywhere, so it's safe to leave them partially filled.
+ */
+export type SocialNetwork = 'instagram' | 'twitter' | 'telegram' | 'whatsapp'
+
+export type SocialLink = {
+  network: SocialNetwork
+  /** Public profile URL. Leave empty to hide the icon and skip JSON-LD. */
+  url: string
+  /** Persian aria-label rendered in the Footer. */
+  labelFa: string
+}
+
+export const SOCIAL_LINKS: SocialLink[] = [
+  { network: 'instagram', url: '', labelFa: 'اینستاگرام پی‌کارت' },
+  { network: 'twitter', url: '', labelFa: 'توییتر پی‌کارت' },
+  { network: 'telegram', url: '', labelFa: 'کانال تلگرام پی‌کارت' },
+  { network: 'whatsapp', url: '', labelFa: 'واتس‌اپ پی‌کارت' },
+]
+
+/**
+ * E-Namad (نماد اعتماد الکترونیکی) embed code provided by enamad.ir
+ * after the operator completes the registration. When non-empty, the
+ * Footer renders the official trust seal iframe; otherwise we keep the
+ * generic guarantee badges and a clearly-labelled "ثبت در حال انجام"
+ * placeholder so we never claim a credential we don't have.
+ *
+ * Paste the raw iframe HTML the enamad.ir dashboard provides (it
+ * contains the unique merchant id) into ENAMAD_IFRAME_HTML to switch
+ * the placeholder for the real seal.
+ */
+export const ENAMAD_IFRAME_HTML = ''
+
+/**
  * Build an absolute URL from an in-app path. Empty / undefined returns the site root.
  */
 export function absoluteUrl(path?: string | null): string {

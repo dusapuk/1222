@@ -11,6 +11,7 @@ import {
   SITE_NAME,
   SITE_NAME_EN,
   SITE_URL,
+  SOCIAL_LINKS,
   absoluteUrl,
   clampDescription,
 } from './seo'
@@ -19,7 +20,8 @@ import type { Category, Plan, Service } from './data'
 type Json = Record<string, unknown>
 
 export function organizationLd(): Json {
-  return {
+  const sameAs = SOCIAL_LINKS.map((s) => s.url.trim()).filter(Boolean)
+  const org: Json = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     '@id': SITE_URL + '/#organization',
@@ -27,8 +29,9 @@ export function organizationLd(): Json {
     alternateName: SITE_NAME_EN,
     url: SITE_URL + '/',
     logo: absoluteUrl('/favicon.svg'),
-    sameAs: [],
   }
+  if (sameAs.length > 0) org.sameAs = sameAs
+  return org
 }
 
 export function websiteLd(): Json {

@@ -8,7 +8,9 @@ import { CategoryPage } from './pages/CategoryPage'
 import { SearchPage } from './pages/SearchPage'
 import { ServiceDetailPage } from './pages/ServiceDetailPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { StaticPageView } from './pages/StaticPage'
 import type { SortKey } from './lib/data'
+import { findStaticPage } from './lib/staticPages'
 
 function parseSort(value: string | null): SortKey {
   switch (value) {
@@ -81,6 +83,14 @@ function App() {
           onUpdateParams={setParams}
         />
       )
+    }
+
+    // Static content pages (about, contact, privacy, terms, refund, faq, guide).
+    // Mapped from the leading path segment so /privacy and /privacy/ both work.
+    const slug = path.replace(/^\/+|\/+$/g, '')
+    const staticPage = findStaticPage(slug)
+    if (staticPage) {
+      return <StaticPageView page={staticPage} onNavigate={navigate} />
     }
 
     return <NotFoundPage onNavigate={navigate} />
