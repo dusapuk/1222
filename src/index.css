@@ -56,3 +56,35 @@
     --radius: 0.5rem
   }
 }
+
+/* SEO long description (#7): the enrich script emits HTML with
+   <h2>/<p>/<ul>/<ol> sections inside ServiceDetailPage. We style
+   these once globally so each service page renders a typographic
+   rich body without leaking styles to other rendered HTML. */
+.service-long-description > p {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.service-long-description > h2 {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.service-long-description > ul,
+.service-long-description > ol {
+  margin: 0.5rem 0 1rem;
+  padding-inline-start: 1.25rem;
+}
+.service-long-description > ul > li {
+  list-style: disc;
+  margin-bottom: 0.25rem;
+}
+.service-long-description > ol > li {
+  list-style: persian;
+  margin-bottom: 0.25rem;
+}
+.service-long-description strong {
+  color: #d4d4d8;
+}

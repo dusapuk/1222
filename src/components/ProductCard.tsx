@@ -1,9 +1,10 @@
-import { ShoppingCart, Heart, Eye, Percent, Sparkles, Flame, AlertCircle } from 'lucide-react'
+import { ShoppingCart, Heart, Eye, Percent, Sparkles, Flame, AlertCircle, Activity } from 'lucide-react'
 import type { MouseEvent } from 'react'
 import type { Service } from '../lib/data'
 import { getDiscountPct } from '../lib/data'
 import { formatToman } from '../lib/format'
 import { AppLink } from './AppLink'
+import { liveOrderLabelFa } from '../lib/liveCounter'
 
 const FALLBACK = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%231a1b26"/><circle cx="32" cy="26" r="9" fill="%23505162"/><path d="M14 56c0-9.94 8.06-18 18-18s18 8.06 18 18" fill="%23505162"/></svg>'
 
@@ -17,6 +18,10 @@ export function ProductCard({ service: s, onNavigate, variant = 'default' }: Pro
   const discount = getDiscountPct(s)
   const compact = variant === 'compact'
   const href = '/s/' + s.slug
+  // SEO roadmap #18: build-time deterministic order counter.
+  // Surfaces social-proof activity on every card without needing a
+  // realtime backend. Skipped for out-of-stock services.
+  const liveLabel = liveOrderLabelFa(s)
 
   // Inner action buttons (favourite / quick view / cart) must not bubble
   // up to the outer link. Stop propagation on the wrapping anchor click
@@ -105,6 +110,16 @@ export function ProductCard({ service: s, onNavigate, variant = 'default' }: Pro
         <p className="text-[11px] text-[#6b6c78] mb-3 line-clamp-2 leading-5 min-h-[2.5rem]">
           {s.shortDescriptionFa ?? s.titleEn ?? ''}
         </p>
+        {liveLabel && (
+          <div
+            className="-mt-1 mb-3 inline-flex self-start items-center gap-1 bg-[#06d6a0]/12 text-[#06d6a0] text-[10px] font-bold px-2 py-1 rounded-md"
+            aria-label={liveLabel}
+            title={liveLabel}
+          >
+            <Activity size={10} />
+            {liveLabel}
+          </div>
+        )}
 
         <div className="mt-auto flex items-end justify-between gap-2">
           <div className="min-w-0">

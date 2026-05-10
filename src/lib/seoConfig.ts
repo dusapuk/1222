@@ -38,6 +38,8 @@ import type { AuthorPage, StaticPage } from './staticPages'
 import type { BlogPost } from './blog'
 import type { ServiceReview } from './reviews'
 import { getDiscountPct, getPlanDiscountPct } from './data'
+import { getCategoryFaqs } from './categoryFaqs'
+import { hasPerServiceOgImage, perServiceOgImagePath } from './serviceOgImages'
 
 /**
  * Pick a short Persian tagline appended to category-page titles after
@@ -203,6 +205,11 @@ export function seoForCategory(args: {
         path: `/c/${category.slug}`,
       }),
       itemListLd(services.slice(0, 24), `/c/${category.slug}`),
+      // Mini-FAQ on every category page — 5 evergreen Persian Q&A
+      // hand-curated per vertical. Surfaces «People also ask» on
+      // category-level head terms («دستیار هوش مصنوعی»,
+      // «فضای ابری»…) where service-level FAQ doesn't compete.
+      faqLd(getCategoryFaqs(category.slug)),
     ],
   }
 }
@@ -296,6 +303,18 @@ export function seoForService(args: {
 
   const imageAlt = `خرید ${service.titleFa}${service.titleEn ? ` – ${service.titleEn}` : ''} ${CURRENT_JALALI_YEAR} در پی‌کارت`
 
+  // Per-service og:image (1200×630 PNG) when one was generated for
+  // this slug. Falls back to the service logo — logos look poor when
+  // social platforms downscale them, so we prefer the per-service
+  // hero whenever available.
+  const ogImage = hasPerServiceOgImage(service.slug)
+    ? perServiceOgImagePath(service.slug)
+    : service.logoUrl
+  // For per-service og:images we know the exact dimensions and can
+  // declare them upfront so social previewers don't need to refetch.
+  const ogImageWidth = hasPerServiceOgImage(service.slug) ? 1200 : undefined
+  const ogImageHeight = hasPerServiceOgImage(service.slug) ? 630 : undefined
+
   return {
     // Always treat the title as raw so the «| پی‌کارت» suffix isn't
     // duplicated by useSEO's default "<title> | <SITE_NAME>" template.
@@ -303,8 +322,10 @@ export function seoForService(args: {
     title: titleRaw,
     description,
     path,
-    image: service.logoUrl,
+    image: ogImage,
     imageAlt,
+    imageWidth: ogImageWidth,
+    imageHeight: ogImageHeight,
     ogType: 'product',
     jsonLd,
   }

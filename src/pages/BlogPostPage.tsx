@@ -171,6 +171,43 @@ export function BlogPostPage({ slug, onNavigate }: BlogPostPageProps) {
         })}
       </div>
 
+      {post.howToSteps && post.howToSteps.length >= 2 && (
+        <section className="mt-7 bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-7">
+          <h2 className="text-lg md:text-xl font-black text-white mb-4">
+            راهنمای گام‌به‌گام
+          </h2>
+          <ol className="space-y-4 list-none">
+            {post.howToSteps.map((step, i) => (
+              <li
+                key={i}
+                className="relative bg-[#0e0f15] border border-[#1e1f2a] rounded-xl p-4 pe-12"
+              >
+                <span
+                  aria-hidden
+                  className="absolute end-3 top-3 inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#d4a853]/15 text-[#d4a853] text-sm font-black"
+                >
+                  {toPersianDigits(i + 1)}
+                </span>
+                <h3 className="text-sm font-bold text-white mb-1.5">{step.name}</h3>
+                <p className="text-xs md:text-sm text-[#9a9baa] leading-7 whitespace-pre-line">
+                  {step.text}
+                </p>
+                {step.url && (
+                  <AppLink
+                    href={step.url}
+                    onNavigate={onNavigate}
+                    className="mt-2 inline-flex items-center gap-1.5 text-xs text-[#d4a853] hover:underline"
+                  >
+                    باز کردن این مرحله
+                    <ArrowLeft size={12} />
+                  </AppLink>
+                )}
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
       {post.faq && post.faq.length > 0 && (
         <section className="mt-7 bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-7">
           <h2 className="text-lg md:text-xl font-black text-white mb-4">سوالات متداول</h2>

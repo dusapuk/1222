@@ -19,6 +19,7 @@ import { iconFor, colorForCategory, imageForCategory } from '../lib/icons'
 import { toPersianDigits } from '../lib/format'
 import { useSEO } from '../hooks/useSEO'
 import { seoForCategory, seoForCategoryNotFound } from '../lib/seoConfig'
+import { getCategoryFaqs } from '../lib/categoryFaqs'
 
 export type CategoryPageProps = {
   slug: string
@@ -376,6 +377,10 @@ export function CategoryPage({
               <Pagination page={safePage} pageCount={pageCount} onChange={setPage} />
             </>
           )}
+
+          {/* Mini-FAQ block — 5 evergreen Q&A on every category page,
+              JSON-LD FAQPage emitted from seoForCategory. */}
+          <CategoryFaqBlock slug={category.slug} />
         </main>
       </div>
 
@@ -438,5 +443,49 @@ export function CategoryPage({
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * Mini-FAQ block rendered at the bottom of every category page.
+ * Pulls 5 hand-curated Persian Q&A from `categoryFaqs.ts` (the same
+ * payload that gets emitted as FAQPage JSON-LD via `seoForCategory`).
+ *
+ * Renders as native `<details>` / `<summary>` so the markup stays
+ * accessible (and Google can still parse it) even with JS disabled.
+ */
+function CategoryFaqBlock({ slug }: { slug: string }) {
+  const faqs = getCategoryFaqs(slug)
+  if (!faqs.length) return null
+  return (
+    <section
+      aria-label="پرسش‌های پرتکرار درباره این دسته"
+      className="mt-12 bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 sm:p-6"
+    >
+      <h2 className="font-bold text-base sm:text-lg text-white mb-4">
+        سوالات پرتکرار درباره این دسته
+      </h2>
+      <div className="divide-y divide-[#1e1f2a]">
+        {faqs.map((f, i) => (
+          <details
+            key={i}
+            className="group py-3 first:pt-0 last:pb-0"
+          >
+            <summary className="cursor-pointer list-none flex items-start justify-between gap-3 font-bold text-sm text-white">
+              <span>{f.question}</span>
+              <span
+                aria-hidden
+                className="text-[#d4a853] text-lg leading-none mt-0.5 transition-transform group-open:rotate-45"
+              >
+                +
+              </span>
+            </summary>
+            <p className="mt-3 text-sm text-[#b8b9c4] leading-7">
+              {f.answer}
+            </p>
+          </details>
+        ))}
+      </div>
+    </section>
   )
 }

@@ -42,6 +42,8 @@ import { iconFor, colorForCategory } from '../lib/icons'
 import { useSEO } from '../hooks/useSEO'
 import { seoForService, seoForServiceNotFound } from '../lib/seoConfig'
 import { getRelatedBlogPostsForService, type BlogPost } from '../lib/blog'
+import { getServiceRegions } from '../lib/regions'
+import { liveOrderLabelFa } from '../lib/liveCounter'
 
 const FALLBACK = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%231a1b26"/><circle cx="32" cy="26" r="9" fill="%23505162"/><path d="M14 56c0-9.94 8.06-18 18-18s18 8.06 18 18" fill="%23505162"/></svg>'
 
@@ -208,13 +210,31 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
             </div>
           </div>
 
+          {/* Live order counter — SEO roadmap #18. Build-time
+              deterministic value (rotates daily) so SSR and crawler
+              snapshots stay consistent. */}
+          <ServiceLiveCounter service={service} />
+
           <div className="mt-5 bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-6">
             <h2 className="text-lg font-black text-white mb-3">درباره {service.titleFa}</h2>
-            <p className="text-sm text-[#9a9baa] leading-7 whitespace-pre-line">
-              {detail?.descriptionFa ??
-                service.shortDescriptionFa ??
-                'این سرویس به صورت رسمی ارائه می‌شود. تمام پلن‌ها در همین صفحه قابل مقایسه است و سفارش‌ها در کمتر از چند ساعت تحویل داده می‌شود.'}
-            </p>
+            {detail?.descriptionFa && /<\w/.test(detail.descriptionFa) ? (
+              // The enrichment script generates HTML with <h2>/<p>/<ul>/<ol>
+              // sections so each service page has a real ≥3000-char rich
+              // body (SEO roadmap #7). Render it through
+              // dangerouslySetInnerHTML — the HTML comes from our own
+              // build-time enrich script (no user input) and is sanitised
+              // upstream.
+              <div
+                className="service-long-description text-sm text-[#9a9baa] leading-7"
+                dangerouslySetInnerHTML={{ __html: detail.descriptionFa }}
+              />
+            ) : (
+              <p className="text-sm text-[#9a9baa] leading-7 whitespace-pre-line">
+                {detail?.descriptionFa ??
+                  service.shortDescriptionFa ??
+                  'این سرویس به صورت رسمی ارائه می‌شود. تمام پلن‌ها در همین صفحه قابل مقایسه است و سفارش‌ها در کمتر از چند ساعت تحویل داده می‌شود.'}
+              </p>
+            )}
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
               {[
@@ -242,6 +262,13 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
               })}
             </div>
           </div>
+
+          {/* Multi-region availability table — SEO roadmap #16.
+              Highlights extra geographies a service is sold in beyond
+              the canonical Iran (TR, AE, AF, …). Surfaces the same
+              data as `Offer.eligibleRegion` in JSON-LD so the visible
+              UI matches what crawlers see. */}
+          <ServiceRegionsBlock service={service} category={category} />
 
           {detail?.faq && detail.faq.length > 0 && (
             <div className="mt-5 bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-6">
@@ -629,7 +656,23 @@ function ReviewsSection({
   serviceTitleFa: string
 }) {
   const summary = summarizeReviews(reviews)
-  if (!summary || !reviews) return null
+  // Even with zero verified reviews we still want a CTA card visible
+  // so customers can leave the first review (#9). Render the empty
+  // shell when no summary exists.
+  if (!summary || !reviews) {
+    return (
+      <div className="mt-5 bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-6">
+        <h2 className="text-lg font-black text-white mb-3">
+          نظرات کاربران درباره {serviceTitleFa}
+        </h2>
+        <p className="text-xs text-[#6b6c78] mb-4">
+          هنوز نظر تأییدشده‌ای برای این سرویس ثبت نشده. اولین کسی باشید که تجربه خرید
+          خود را با کاربران ایرانی به‌اشتراک می‌گذارد.
+        </p>
+        <ReviewCtaCard serviceTitleFa={serviceTitleFa} />
+      </div>
+    )
+  }
 
   // Show all verified reviews up to a sensible cap on detail pages.
   const verifiedReviews = reviews
@@ -672,6 +715,14 @@ function ReviewsSection({
           </div>
         </div>
       </div>
+
+      {/* Review collection CTA — SEO roadmap #9. The discount nudge
+          is the proven highest-conversion incentive for verified
+          reviews on Persian e-commerce (license-market.ir, digikala
+          pattern). Honoured manually by the support team — no
+          automation here, just a clean handoff to support so the
+          review schema fills naturally over time. */}
+      <ReviewCtaCard serviceTitleFa={serviceTitleFa} />
 
       <ul className="space-y-3">
         {verifiedReviews.map((r, i) => (
@@ -721,6 +772,153 @@ function ReviewsSection({
           </li>
         ))}
       </ul>
+    </div>
+  )
+}
+
+/**
+ * Multi-region availability block — SEO roadmap #16.
+ *
+ * Resolves the regions list via `getServiceRegions()` (the same source
+ * `Offer.eligibleRegion` reads), then renders a small <h2> + <ul>
+ * highlighting every extra country the service is sold in besides
+ * Iran (the canonical region). When a service has no extra regions
+ * the block is hidden so non-streaming/non-music products don't
+ * surface a confusing «only Iran» row.
+ */
+function ServiceRegionsBlock({
+  service,
+  category,
+}: {
+  service: import('../lib/data').Service
+  category: import('../lib/data').Category | undefined
+}) {
+  const regions = getServiceRegions({ service, category })
+  if (regions.length <= 1) return null
+
+  // Per-region tagline tuned for the Persian-speaking diaspora.
+  const taglineFor = (code: string): string => {
+    switch (code) {
+      case 'IR':
+        return 'پشتیبانی فارسی، فاکتور تومانی، تحویل آنی'
+      case 'TR':
+        return 'مناسب کاربران ایرانی و افغانستانی مقیم ترکیه — ریجن قیمت‌پایین'
+      case 'AE':
+        return 'مناسب کاربران مقیم امارات — ریجن کاتالوگ کامل و پخش پایدار'
+      case 'AF':
+        return 'مناسب فارسی‌زبانان مقیم افغانستان — تحویل با مدارک محلی'
+      case 'TJ':
+        return 'مناسب کاربران تاجیکستان و فارسی‌زبانان آسیای میانه'
+      case 'IQ':
+        return 'مناسب کاربران مقیم عراق — کاتالوگ منطقه‌ای'
+      default:
+        return 'تحویل با ضمانت اصالت و پشتیبانی فارسی'
+    }
+  }
+
+  return (
+    <div className="mt-5 bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-6">
+      <h2 className="text-lg font-black text-white mb-2">
+        مناطق پشتیبانی‌شده برای خرید {service.titleFa}
+      </h2>
+      <p className="text-xs text-[#6b6c78] mb-4">
+        پی‌کارت {service.titleFa} را به‌صورت رسمی در {toPersianDigits(regions.length)} منطقه
+        ارائه می‌دهد. تحویل، گارانتی و فاکتور برای هر منطقه به‌صورت محلی پشتیبانی می‌شود.
+      </p>
+      <div className="overflow-x-auto -mx-1">
+        <table className="w-full text-right text-xs md:text-sm border-separate [border-spacing:0_4px]">
+          <thead>
+            <tr className="text-[10px] md:text-xs text-[#6b6c78]">
+              <th className="font-bold pe-3 py-1 text-start">کشور</th>
+              <th className="font-bold pe-3 py-1 text-start">کد منطقه</th>
+              <th className="font-bold py-1 text-start">جزئیات تحویل</th>
+            </tr>
+          </thead>
+          <tbody>
+            {regions.map((r) => (
+              <tr
+                key={r.code}
+                className="bg-[#0e0f15] border border-[#1e1f2a]"
+              >
+                <td className="py-2 ps-3 pe-2 font-bold text-white rounded-s-xl border-s border-y border-[#1e1f2a] whitespace-nowrap">
+                  {r.nameFa}
+                </td>
+                <td className="py-2 px-2 text-[#9a9baa] border-y border-[#1e1f2a] whitespace-nowrap">
+                  {r.code}
+                </td>
+                <td className="py-2 ps-2 pe-3 text-[#9a9baa] rounded-e-xl border-e border-y border-[#1e1f2a]">
+                  {taglineFor(r.code)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Review-collection call-to-action — SEO roadmap #9.
+ *
+ * Renders inside `ReviewsSection` to nudge customers into leaving a
+ * verified review. Persian e-commerce convention is a small discount
+ * coupon in exchange for a review (license-market.ir, digikala) so we
+ * lead with «۱۰٪ تخفیف» right in the button copy. Routes the user to
+ * the support pages (Telegram / WhatsApp / contact form) — the
+ * support team manually applies the discount and queues the review
+ * in the verified reviews table.
+ */
+function ReviewCtaCard({
+  serviceTitleFa,
+}: {
+  serviceTitleFa: string
+}) {
+  const supportUrl = '/contact?topic=review'
+  return (
+    <div className="mb-4 bg-gradient-to-br from-[#d4a853]/10 via-[#0e0f15] to-[#0e0f15] border border-[#d4a853]/30 rounded-xl p-4 md:p-5">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <div className="text-sm font-black text-white mb-1">
+            تجربه خرید {serviceTitleFa} داشته‌اید؟ نظر بدهید + ۱۰٪ تخفیف
+          </div>
+          <p className="text-[11px] md:text-xs text-[#9a9baa] leading-6">
+            هر نظر تأییدشده روی این صفحه شامل کد تخفیف ۱۰٪ برای خرید بعدی
+            می‌شود. تیم پشتیبانی پس از بررسی نظر، کد را برای شما ارسال
+            می‌کند.
+          </p>
+        </div>
+        <a
+          href={supportUrl}
+          className="self-start md:self-auto whitespace-nowrap inline-flex items-center justify-center bg-[#d4a853] hover:bg-[#c49a48] text-[#0b0c10] text-xs md:text-sm font-bold px-4 py-2.5 rounded-xl transition-colors"
+        >
+          ثبت نظر و دریافت تخفیف
+        </a>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Visible «X سفارش در ۲۴ ساعت گذشته» social-proof badge — SEO
+ * roadmap #18. Pulled from `liveCounter.ts` so the value is
+ * deterministic per service per UTC day. Hidden for out-of-stock
+ * services (returns null when the helper does).
+ */
+function ServiceLiveCounter({
+  service,
+}: {
+  service: import('../lib/data').Service
+}) {
+  const label = liveOrderLabelFa(service)
+  if (!label) return null
+  return (
+    <div className="mt-3 inline-flex items-center gap-2 bg-[#06d6a0]/12 border border-[#06d6a0]/40 text-[#06d6a0] text-xs md:text-sm font-bold px-3 py-2 rounded-xl">
+      <span
+        aria-hidden
+        className="inline-block w-2 h-2 rounded-full bg-[#06d6a0] animate-pulse"
+      />
+      {label}
     </div>
   )
 }
