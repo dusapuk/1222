@@ -106,6 +106,13 @@ export function Header({ onNavigate }: HeaderProps) {
               >
                 دسته‌بندی‌ها
               </AppLink>
+              <AppLink
+                href="/blog"
+                onNavigate={onNavigate}
+                className="hidden lg:flex items-center gap-2 text-sm text-[#c4c5d0] hover:text-[#d4a853] transition-colors px-3 h-10 no-underline"
+              >
+                وبلاگ
+              </AppLink>
               <button
                 type="button"
                 className="relative p-2.5 rounded-lg hover:bg-[#16171f] transition-colors group"
@@ -206,6 +213,14 @@ export function Header({ onNavigate }: HeaderProps) {
               className="block w-full text-right px-3 py-3 rounded-lg text-sm text-white hover:bg-[#16171f] no-underline"
             >
               همه دسته‌بندی‌ها
+            </AppLink>
+            <AppLink
+              href="/blog"
+              onNavigate={onNavigate}
+              onClick={() => setMobileMenu(false)}
+              className="block w-full text-right px-3 py-3 rounded-lg text-sm text-white hover:bg-[#16171f] no-underline"
+            >
+              وبلاگ
             </AppLink>
             <button
               type="button"

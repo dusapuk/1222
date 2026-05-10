@@ -145,6 +145,75 @@ export function getVerificationMetas(): VerificationMeta[] {
 export const ENAMAD_IFRAME_HTML = readEnv('VITE_ENAMAD_IFRAME_HTML')
 
 /**
+ * Editorial author name used in `Article` JSON-LD's `author.name` for
+ * blog posts. Defaults to the brand. Operator can override per post by
+ * setting `BlogPost.author` directly.
+ */
+export const BLOG_AUTHOR_NAME = SITE_NAME + ' — تیم تحریریه'
+
+/**
+ * Local-business signals for Iran-specific E-E-A-T. Schema.org's
+ * LocalBusiness extension to Organization, plus legacy geo metas
+ * (`geo.region`, `geo.placename`, `geo.position`, `ICBM`) that older
+ * Yandex/Bing crawlers still consult to localise results.
+ *
+ * Defaults point at Tehran (the operator's declared base of operations);
+ * any value can be overridden via the matching `VITE_*` env var.
+ *
+ * `GEO_REGION` follows ISO 3166-2 (e.g. `IR-23` = Tehran province).
+ * `GEO_POSITION` is `lat;lng` (semicolon — the geo.position meta
+ * convention; ICBM uses comma).
+ */
+export const GEO_REGION = readEnv('VITE_PIKART_GEO_REGION') || 'IR-23'
+export const GEO_PLACENAME = readEnv('VITE_PIKART_GEO_PLACENAME') || 'Tehran'
+export const GEO_POSITION = readEnv('VITE_PIKART_GEO_POSITION') || '35.6892;51.3890'
+
+/**
+ * Optional Google Maps URL for the registered office, surfaced as
+ * `hasMap` on the LocalBusiness JSON-LD. Empty by default so we don't
+ * advertise a generic city pin as the operator's address.
+ */
+export const GEO_MAP_URL = readEnv('VITE_PIKART_GEO_MAP_URL')
+
+/** Comma-separated currencies the marketplace transacts in. */
+export const CURRENCIES_ACCEPTED = readEnv('VITE_PIKART_CURRENCIES') || 'IRR'
+/** Comma-separated payment methods (Persian + English aliases). */
+export const PAYMENT_ACCEPTED =
+  readEnv('VITE_PIKART_PAYMENT_METHODS') ||
+  'Credit Card, Debit Card, Wallet, Shaparak'
+
+/**
+ * Returns the legacy geo meta tags that should be added to every page
+ * head. Empty array if no values are configured (so we never emit
+ * blank metas).
+ */
+export function getGeoMetas(): { name: string; content: string }[] {
+  const metas: { name: string; content: string }[] = []
+  if (GEO_REGION) metas.push({ name: 'geo.region', content: GEO_REGION })
+  if (GEO_PLACENAME) metas.push({ name: 'geo.placename', content: GEO_PLACENAME })
+  if (GEO_POSITION) {
+    metas.push({ name: 'geo.position', content: GEO_POSITION })
+    // ICBM uses comma instead of semicolon
+    metas.push({ name: 'ICBM', content: GEO_POSITION.replace(';', ', ') })
+  }
+  return metas
+}
+
+/**
+ * Parse `GEO_POSITION` ("lat;lng") into numbers. Returns null when
+ * either side is missing or non-numeric so JSON-LD callers can omit
+ * the `geo` block instead of emitting NaNs.
+ */
+export function getGeoCoordinates(): { latitude: number; longitude: number } | null {
+  if (!GEO_POSITION) return null
+  const [latRaw, lngRaw] = GEO_POSITION.split(/[;,]/).map((s) => s.trim())
+  const lat = Number(latRaw)
+  const lng = Number(lngRaw)
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  return { latitude: lat, longitude: lng }
+}
+
+/**
  * Build an absolute URL from an in-app path. Empty / undefined returns the site root.
  */
 export function absoluteUrl(path?: string | null): string {

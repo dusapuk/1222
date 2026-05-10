@@ -2,9 +2,17 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "www.pikart.ir" }],
+      "destination": "https://pikart.ir/$1",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
-      "source": "/((?!api/|assets/|images/|imported-images/|icons/|fonts/|data/|\\.well-known/|favicon.svg|favicon.ico|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|sw\\.js|opensearch\\.xml|humans\\.txt).*)",
+      "source": "/((?!api/|assets/|images/|imported-images/|icons/|fonts/|data/|\\.well-known/|favicon.svg|favicon.ico|robots\\.txt|sitemap\\.xml|rss\\.xml|manifest\\.webmanifest|sw\\.js|opensearch\\.xml|humans\\.txt).*)",
       "destination": "/index.html"
     }
   ],
@@ -28,6 +36,13 @@
     {
       "source": "/sitemap.xml",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }]
+    },
+    {
+      "source": "/rss.xml",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600" },
+        { "key": "Content-Type", "value": "application/rss+xml; charset=utf-8" }
+      ]
     },
     {
       "source": "/robots.txt",
