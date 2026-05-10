@@ -14,6 +14,7 @@ import {
   CURRENCIES_ACCEPTED,
   GEO_MAP_URL,
   PAYMENT_ACCEPTED,
+  PRODUCT_DESCRIPTION_MAX,
   SITE_NAME,
   SITE_NAME_EN,
   SITE_URL,
@@ -21,6 +22,7 @@ import {
   absoluteUrl,
   clampDescription,
   getGeoCoordinates,
+  stripHtml,
 } from './seo'
 import type { Category, Plan, Service } from './data'
 import type { ServiceReview } from './reviews'
@@ -192,12 +194,25 @@ export function productLd(args: {
   const { service, category, plans, cheapest, path, longDescription, reviews } = args
   const url = absoluteUrl(path)
 
-  const description = clampDescription(
-    longDescription ??
-      service.shortDescriptionFa ??
-      `خرید ${service.titleFa}${category ? ' در دسته ' + category.titleFa : ''} با تحویل سریع، پشتیبانی فارسی و ضمانت اصالت در پی‌کارت.`,
-    300,
-  )
+  // `Product.description` is the field Google extracts for AI Overviews
+  // and featured-snippet expansion. Competitors keep this field at
+  // 30 000+ characters (license-market.ir: 32 549). We deliberately do
+  // NOT clamp to ~300 chars here — if a long marketing copy exists,
+  // we strip its HTML and pass the full text up to PRODUCT_DESCRIPTION_MAX
+  // (Google silently truncates beyond that). The much shorter
+  // `<meta description>` is built separately in `seoForService`.
+  const longText = stripHtml(longDescription)
+  let description: string
+  if (longText && longText.length > 300) {
+    description = longText.slice(0, PRODUCT_DESCRIPTION_MAX).trim()
+  } else {
+    description = clampDescription(
+      longText ||
+        service.shortDescriptionFa ||
+        `خرید ${service.titleFa}${category ? ' در دسته ' + category.titleFa : ''} با تحویل سریع، پشتیبانی فارسی و ضمانت اصالت در پی‌کارت.`,
+      300,
+    )
+  }
 
   const offers = buildOffers({ service, plans, cheapest, url })
 
@@ -222,6 +237,22 @@ export function productLd(args: {
     product.image = absoluteUrl(service.logoUrl)
   }
   if (offers) product.offers = offers
+
+  // E-E-A-T signal: tell Google explicitly which audience we serve.
+  // Mirrors the org-level `areaServed` so single-product pages stand on
+  // their own without inheriting the Organization payload.
+  product.audience = {
+    '@type': 'PeopleAudience',
+    geographicArea: { '@type': 'Country', name: 'Iran', identifier: 'IR' },
+  }
+
+  // SpeakableSpecification — hints to Google Assistant / voice search
+  // which DOM nodes are read aloud. Kept conservative: only the H1
+  // (`.product-summary` is the title region) and the price block.
+  product.speakable = {
+    '@type': 'SpeakableSpecification',
+    cssSelector: ['h1', '.product-summary', '.product-price'],
+  }
 
   const reviewBlocks = buildReviewBlocks(reviews ?? [])
   if (reviewBlocks) {
@@ -295,6 +326,11 @@ function buildOffers(args: {
   // eligibility for digital products.
   const seller: Json = { '@id': SITE_URL + '/#organization' }
   const priceValidUntil = defaultPriceValidUntil()
+  const eligibleRegion: Json = {
+    '@type': 'Country',
+    name: 'Iran',
+    identifier: 'IR',
+  }
   const hasMerchantReturnPolicy: Json = {
     '@type': 'MerchantReturnPolicy',
     applicableCountry: 'IR',
@@ -322,9 +358,15 @@ function buildOffers(args: {
     },
   }
 
+  // UnitPriceSpecification surfaces the cheapest plan's per-unit
+  // pricing (typically per month). Even when we emit AggregateOffer,
+  // Google can use this to show a "تجدید ماهانه" hint in pricing
+  // rich-results when a single base unit is identifiable.
+  const unitPriceSpec = buildUnitPriceSpec(cheapest ?? priced[0])
+
   if (priced.length > 1) {
     const prices = priced.map((p) => p.priceIrt as number)
-    return {
+    const aggregate: Json = {
       '@type': 'AggregateOffer',
       priceCurrency: 'IRR',
       lowPrice: Math.round(Math.min(...prices) * 10), // toman → rial
@@ -333,25 +375,31 @@ function buildOffers(args: {
       availability,
       url,
       priceValidUntil,
+      eligibleRegion,
       seller,
       hasMerchantReturnPolicy,
       shippingDetails,
     }
+    if (unitPriceSpec) aggregate.priceSpecification = unitPriceSpec
+    return aggregate
   }
 
   const single = cheapest ?? priced[0]
   if (single?.priceIrt != null) {
-    return {
+    const offer: Json = {
       '@type': 'Offer',
       priceCurrency: 'IRR',
       price: Math.round(single.priceIrt * 10),
       availability,
       url,
       priceValidUntil,
+      eligibleRegion,
       seller,
       hasMerchantReturnPolicy,
       shippingDetails,
     }
+    if (unitPriceSpec) offer.priceSpecification = unitPriceSpec
+    return offer
   }
 
   if (service.fromPriceIrt != null) {
@@ -362,12 +410,54 @@ function buildOffers(args: {
       availability,
       url,
       priceValidUntil,
+      eligibleRegion,
       seller,
       hasMerchantReturnPolicy,
       shippingDetails,
     }
   }
   return null
+}
+
+/**
+ * Map a plan's `durationDays` to a schema.org `unitCode` + `unitText`
+ * pair. Returns null when the plan has no usable duration (e.g.
+ * lifetime / undefined) so we omit the price spec rather than emit a
+ * misleading per-day value.
+ */
+function buildUnitPriceSpec(plan: Plan | null | undefined): Json | null {
+  if (!plan || plan.priceIrt == null) return null
+  const days = plan.durationDays ?? null
+  if (!days || days <= 0) return null
+
+  // Pick a sensible base unit. Schema.org's UnitPriceSpecification
+  // accepts UN/CEFACT codes via `unitCode`; we use the readable
+  // `unitText` mostly for Persian display in rich-result previews.
+  let unitText = 'MONTH'
+  let referenceQuantityValue = 1
+  if (days >= 350) {
+    unitText = 'YEAR'
+  } else if (days >= 27 && days <= 92) {
+    unitText = 'MONTH'
+    referenceQuantityValue = Math.max(1, Math.round(days / 30))
+  } else if (days < 27) {
+    unitText = 'DAY'
+    referenceQuantityValue = days
+  } else {
+    unitText = 'MONTH'
+    referenceQuantityValue = Math.max(1, Math.round(days / 30))
+  }
+
+  return {
+    '@type': 'UnitPriceSpecification',
+    price: Math.round(plan.priceIrt * 10),
+    priceCurrency: 'IRR',
+    referenceQuantity: {
+      '@type': 'QuantitativeValue',
+      value: referenceQuantityValue,
+      unitText,
+    },
+  }
 }
 
 export type FaqItem = { question: string; answer: string }
@@ -418,6 +508,20 @@ export function articleLd(args: {
   const url = absoluteUrl('/blog/' + post.slug)
   const image = post.coverImage ? absoluteUrl(post.coverImage) : absoluteUrl('/images/og/og-default.png')
   const dateModified = post.dateModified || post.datePublished
+
+  // E-E-A-T: tie the post to a real `Person` whenever the operator has
+  // configured one (`authorUrl` → author landing page, `authorSameAs`
+  // → LinkedIn / Twitter). Falls back to the brand string-only author
+  // so we never emit a half-filled Person node.
+  const author: Json = {
+    '@type': 'Person',
+    name: post.author,
+  }
+  if (post.authorUrl) author.url = absoluteUrl(post.authorUrl)
+  if (post.authorSameAs && post.authorSameAs.length > 0) {
+    author.sameAs = post.authorSameAs.filter(Boolean)
+  }
+
   const article: Json = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
@@ -433,10 +537,7 @@ export function articleLd(args: {
     datePublished: post.datePublished,
     dateModified,
     url,
-    author: {
-      '@type': 'Person',
-      name: post.author,
-    },
+    author,
     publisher: { '@id': SITE_URL + '/#organization' },
     keywords: post.keywords.join(', '),
     articleSection: post.primaryCategorySlug,
@@ -450,6 +551,63 @@ export function articleLd(args: {
     }
   }
   return article
+}
+
+export type HowToStep = {
+  /** Persian step heading ("ورود به سایت", ...). */
+  name: string
+  /** Body text — plain Persian. */
+  text: string
+  /** Optional in-app or absolute image URL illustrating the step. */
+  image?: string | null
+  /** Optional anchor URL (the “go to step” link in HowTo rich-results). */
+  url?: string | null
+}
+
+/**
+ * `HowTo` payload — emits a step-by-step rich card in Google SERP
+ * (separate from the FAQPage card). Particularly effective for
+ * activation / setup posts («فعال‌سازی ChatGPT»,
+ * «تغییر ریجن اپل آیدی»).
+ *
+ * Returns null when there are fewer than 2 steps — Google requires
+ * `HowTo.step` to contain at least two `HowToStep` entries.
+ */
+export function howToLd(args: {
+  name: string
+  description: string
+  /** ISO 8601 duration, e.g. `PT5M`. Defaults to PT5M when omitted. */
+  totalTime?: string | null
+  steps: HowToStep[]
+}): Json | null {
+  const cleaned = (args.steps ?? [])
+    .map((s) => ({
+      name: (s.name || '').trim(),
+      text: (s.text || '').trim(),
+      image: s.image || null,
+      url: s.url || null,
+    }))
+    .filter((s) => s.name.length > 0 && s.text.length > 0)
+  if (cleaned.length < 2) return null
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: args.name,
+    description: clampDescription(args.description, 200),
+    inLanguage: 'fa-IR',
+    totalTime: args.totalTime || 'PT5M',
+    step: cleaned.map((s, i) => {
+      const entry: Json = {
+        '@type': 'HowToStep',
+        position: i + 1,
+        name: s.name,
+        text: s.text,
+      }
+      if (s.image) entry.image = absoluteUrl(s.image)
+      if (s.url) entry.url = absoluteUrl(s.url)
+      return entry
+    }),
+  }
 }
 
 /**

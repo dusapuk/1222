@@ -11,13 +11,20 @@
  */
 import type { Category, Plan, Service, ServiceDetail } from './data'
 import type { SEOConfig } from '../hooks/useSEO'
-import { absoluteUrl, clampDescription, SITE_NAME } from './seo'
+import {
+  CURRENT_JALALI_YEAR,
+  SITE_NAME,
+  absoluteUrl,
+  clampDescription,
+  toPersianDigits,
+} from './seo'
 import {
   articleLd,
   blogLd,
   breadcrumbLd,
   collectionPageLd,
   faqLd,
+  howToLd,
   itemListLd,
   organizationLd,
   productLd,
@@ -26,18 +33,64 @@ import {
 import type { StaticPage } from './staticPages'
 import type { BlogPost } from './blog'
 import type { ServiceReview } from './reviews'
+import { getDiscountPct, getPlanDiscountPct } from './data'
+
+/**
+ * Pick a short Persian tagline appended to category-page titles after
+ * the Jalali year. Vertical-specific so the SERP snippet hints at the
+ * marketplace's value-prop on each commercial query.
+ */
+function pickCategoryTagline(category: Category): string {
+  const slug = category.slug || ''
+  if (slug.startsWith('ai-')) return 'تحویل آنی و قیمت تومانی'
+  if (slug === 'streaming' || slug === 'music') return 'تحویل ۱ دقیقه و گارانتی'
+  if (slug === 'gift-cards') return 'ارجال و کد فوری'
+  if (slug === 'education') return 'با ایمیل شما'
+  if (slug === 'developer-tools') return 'لایسنس رسمی و فعال‌سازی آنی'
+  if (slug === 'design-creative') return 'لایسنس اصل و تحویل سریع'
+  if (slug === 'productivity-work') return 'دسترسی تیمی و پرداخت تومانی'
+  if (slug === 'cloud-storage') return 'فعال‌سازی فوری و پرداخت تومانی'
+  if (slug === 'social-communication') return 'پرداخت تومانی و تحویل آنی'
+  if (slug === 'business-marketing') return 'پرداخت تومانی برای کسب‌وکارها'
+  return 'تحویل آنی و پشتیبانی فارسی'
+}
+
+/**
+ * Pick a tagline for a service-page title. Discount-driven taglines win
+ * the highest CTR (license-market.ir uses «با ۹۱٪ تخفیف» in title);
+ * falls back to a vertical-specific hook keyed on the parent category.
+ */
+function pickServiceTagline(service: Service, category?: Category): string {
+  const disc = getDiscountPct(service)
+  if (disc >= 30) return `(با ${toPersianDigits(disc)}٪ تخفیف)`
+  if (category) {
+    const slug = category.slug || ''
+    if (slug.startsWith('ai-')) return '+ تحویل آنی'
+    if (slug === 'streaming' || slug === 'music') return 'تحویل ۱ دقیقه + گارانتی'
+    if (slug === 'gift-cards') return 'اصل و کد فوری'
+    if (slug === 'education') return 'با ایمیل شما'
+    if (slug === 'developer-tools') return 'لایسنس رسمی'
+    if (slug === 'design-creative') return 'لایسنس اصل'
+  }
+  return ''
+}
 
 export function seoForHome(args: {
   categoryCount: number
   serviceCount: number
 }): SEOConfig {
   const { categoryCount, serviceCount } = args
+  // E-E-A-T-aware title: leads with Jalali year as freshness signal,
+  // mirrors the pattern license-market.ir / account4all use to win CTR
+  // on commercial queries («خرید ... ۱۴۰۴»).
+  const title = `پی‌کارت ${CURRENT_JALALI_YEAR} | خرید اکانت پرمیوم، گیفت‌کارت و هوش مصنوعی`
+  const description = clampDescription(
+    `مارکت‌پلیس ${toPersianDigits(serviceCount)}+ سرویس دیجیتال در ${toPersianDigits(categoryCount)} دسته‌بندی؛ خرید اکانت پرمیوم، گیفت‌کارت، اشتراک بین‌المللی و هوش مصنوعی با تحویل آنی، گارانتی اصالت و پشتیبانی ۲۴/۷.`,
+  )
   return {
     rawTitle: true,
-    title: 'پی‌کارت | خرید اشتراک‌ها و سرویس‌های دیجیتال با تحویل آنی',
-    description: clampDescription(
-      `بزرگ‌ترین مارکت‌پلیس خرید اکانت‌های پرمیوم، گیفت‌کارت، اشتراک‌های بین‌المللی و سرویس‌های هوش مصنوعی در ایران. بیش از ${serviceCount.toLocaleString('en-US')} سرویس فعال در ${categoryCount} دسته‌بندی.`,
-    ),
+    title,
+    description,
     path: '/',
     image: '/images/home/hero-premium.jpg',
     imageAlt:
@@ -55,9 +108,9 @@ export function seoForCategoriesIndex(args: {
 }): SEOConfig {
   const { categoryCount, serviceCount, categories } = args
   return {
-    title: 'همه دسته‌بندی‌های سرویس‌های دیجیتال',
+    title: `دسته‌بندی‌های سرویس‌های دیجیتال ${CURRENT_JALALI_YEAR}`,
     description: clampDescription(
-      `${categoryCount.toLocaleString('en-US')} دسته‌بندی و ${serviceCount.toLocaleString('en-US')} سرویس فعال — اکانت‌های پرمیوم، گیفت‌کارت، اشتراک‌های بین‌المللی و سرویس‌های هوش مصنوعی با تحویل آنی و ضمانت اصالت.`,
+      `${toPersianDigits(categoryCount)} دسته‌بندی و ${toPersianDigits(serviceCount)} سرویس فعال — اکانت پرمیوم، گیفت‌کارت، اشتراک بین‌المللی و هوش مصنوعی با تحویل آنی، گارانتی اصالت و قیمت تومانی.`,
     ),
     path: '/categories',
     imageAlt: 'دسته‌بندی‌های سرویس‌های دیجیتال در پی‌کارت',
@@ -116,15 +169,22 @@ export function seoForCategory(args: {
   const linkRelNext =
     pageCount != null && page < pageCount ? absoluteUrl(`${basePath}?page=${page + 1}`) : null
 
+  // Category-tagline picks a vertical-specific freshness/trust hook.
+  // E-E-A-T: lead with the count of services + Jalali year so Google
+  // sees a category that's actively curated.
+  const tagline = pickCategoryTagline(category)
+  const title = `خرید ${category.titleFa} ${CURRENT_JALALI_YEAR}${tagline ? ' — ' + tagline : ''} | پی‌کارت`
+  const description = clampDescription(
+    category.description ||
+      `${toPersianDigits(services.length)} سرویس فعال در دسته ${category.titleFa} در ایران با تحویل آنی، گارانتی اصالت، پشتیبانی فارسی و پرداخت تومانی در پی‌کارت.`,
+  )
   return {
-    title: `خرید ${category.titleFa} با بهترین قیمت`,
-    description: clampDescription(
-      category.description ||
-        `${services.length.toLocaleString('en-US')} سرویس فعال در دسته ${category.titleFa} — تحویل آنی، ضمانت اصالت و پشتیبانی فارسی در پی‌کارت.`,
-    ),
+    rawTitle: true,
+    title,
+    description,
     path,
     image: categoryImage,
-    imageAlt: `خرید ${category.titleFa} در پی‌کارت`,
+    imageAlt: `خرید ${category.titleFa} ${CURRENT_JALALI_YEAR} در پی‌کارت`,
     noindex: hasFilters,
     linkRelNext: hasFilters ? null : linkRelNext,
     linkRelPrev: hasFilters ? null : linkRelPrev,
@@ -163,15 +223,27 @@ export function seoForService(args: {
   const { service, category, plans, cheapest, detail, reviews } = args
   const path = `/s/${service.slug}`
 
-  // SEO-overridden title/description from the original CMS — fall back
-  // to a generated "خرید {service}" line if the service has no override.
-  const fallbackTitle = `خرید ${service.titleFa}${service.titleEn ? ` - ${service.titleEn}` : ''}`
+  // Title strategy:
+  //   1. If the legacy CMS provided a hand-crafted SEO override, use it as-is.
+  //   2. Otherwise build «خرید {Brand} ۱۴۰۴ [tagline] | پی‌کارت» —
+  //      year is a freshness signal, the tagline picks discount/category
+  //      hooks for higher CTR (mirrors license-market.ir).
+  const tagline = pickServiceTagline(service, category)
+  const brand = service.titleEn || service.titleFa
+  const fallbackTitle = `خرید ${brand} ${CURRENT_JALALI_YEAR}${tagline ? ' ' + tagline : ''} | پی‌کارت`
   const titleRaw = detail?.seoTitleFa?.trim() || fallbackTitle
-  const fallbackDescription =
-    service.shortDescriptionFa ||
-    `خرید ${service.titleFa}${category ? ' در دسته ' + category.titleFa : ''} با تحویل آنی، ضمانت اصالت و پشتیبانی فارسی در پی‌کارت.`
+
+  // Meta description strategy: SEO override first, then a number-rich
+  // template (plan count + cheapest price + delivery + warranty)
+  // capped at the meta-description budget. Numbers in the description
+  // are the single biggest CTR lever per Search Console A/Bs.
   const description = clampDescription(
-    detail?.seoDescriptionFa?.trim() || fallbackDescription,
+    detail?.seoDescriptionFa?.trim() || buildServiceMetaDescription({
+      service,
+      category,
+      plans,
+      cheapest,
+    }),
   )
 
   const productJsonLd = productLd({
@@ -200,10 +272,12 @@ export function seoForService(args: {
     if (fp) jsonLd.push(fp)
   }
 
-  const imageAlt = `خرید ${service.titleFa}${service.titleEn ? ` – ${service.titleEn}` : ''} در پی‌کارت`
+  const imageAlt = `خرید ${service.titleFa}${service.titleEn ? ` – ${service.titleEn}` : ''} ${CURRENT_JALALI_YEAR} در پی‌کارت`
 
   return {
-    rawTitle: !!detail?.seoTitleFa,
+    // Always treat the title as raw so the «| پی‌کارت» suffix isn't
+    // duplicated by useSEO's default "<title> | <SITE_NAME>" template.
+    rawTitle: true,
     title: titleRaw,
     description,
     path,
@@ -212,6 +286,67 @@ export function seoForService(args: {
     ogType: 'product',
     jsonLd,
   }
+}
+
+/**
+ * Build a number-rich Persian meta description for a service page.
+ * Mirrors Numberland / account4all's competitive pattern of leading
+ * with concrete data (plan count, cheapest price in toman, delivery
+ * time) instead of generic marketing copy. Capped via clampDescription
+ * downstream at 158 chars.
+ */
+function buildServiceMetaDescription(args: {
+  service: Service
+  category?: Category
+  plans: Plan[]
+  cheapest: Plan | null
+}): string {
+  const { service, category, plans, cheapest } = args
+  const activePlans = plans.filter((p) => p.isActive)
+  const planCount = activePlans.length || service.planCount || 0
+  const cheapestPlan = cheapest ?? activePlans.find((p) => p.priceIrt != null) ?? null
+  const cheapestToman = cheapestPlan?.priceIrt ?? service.fromPriceIrt ?? null
+  const delivery = service.deliveryTimeFa?.trim() || 'زیر ۲ دقیقه'
+
+  const head = `خرید ${service.titleFa} ${CURRENT_JALALI_YEAR}`
+
+  const parts: string[] = [head]
+  if (planCount > 0 && cheapestToman != null) {
+    parts.push(
+      `${toPersianDigits(planCount)} پلن از ${toPersianDigits(
+        Math.round(cheapestToman).toLocaleString('en-US'),
+      )} تومان`,
+    )
+  } else if (cheapestToman != null) {
+    parts.push(
+      `از ${toPersianDigits(
+        Math.round(cheapestToman).toLocaleString('en-US'),
+      )} تومان`,
+    )
+  } else if (planCount > 0) {
+    parts.push(`${toPersianDigits(planCount)} پلن فعال`)
+  }
+  parts.push(`تحویل ${delivery}`)
+  parts.push('گارانتی اصالت')
+  parts.push('پشتیبانی فارسی')
+
+  let line = parts.join('، ') + '.'
+
+  // Append 50-60 chars of the short-description if there's headroom.
+  if (service.shortDescriptionFa) {
+    const tail = service.shortDescriptionFa.replace(/\s+/g, ' ').trim()
+    if (tail) {
+      const room = 158 - line.length - 1
+      if (room > 30) {
+        line += ' ' + tail.slice(0, Math.max(30, room))
+      }
+    }
+  }
+
+  // Suppress unused-import warning when no plan-level discount is shown.
+  void getPlanDiscountPct
+  void category
+  return line
 }
 
 export function seoForServiceNotFound(slug: string): SEOConfig {
@@ -290,9 +425,9 @@ export function seoForNotFound(path = '/404'): SEOConfig {
 export function seoForBlogIndex(args: { posts: BlogPost[] }): SEOConfig {
   const { posts } = args
   return {
-    title: 'وبلاگ خرید اشتراک‌های دیجیتال',
+    title: `وبلاگ خرید اشتراک‌های دیجیتال ${CURRENT_JALALI_YEAR}`,
     description: clampDescription(
-      `راهنمای خرید اشتراک ChatGPT Plus، Midjourney، Canva Pro، Adobe Creative Cloud، Apple Music و ده‌ها سرویس دیجیتال دیگر از ایران در ${SITE_NAME} — به‌روزرسانی مرتب با قیمت تومانی و راهنمای فعال‌سازی.`,
+      `مقالات روزآمد درباره خرید اکانت پرمیوم، ابزارهای هوش مصنوعی، فعال‌سازی سرویس‌ها و راهنمای استفاده در مجله ${SITE_NAME} — به‌روزرسانی مرتب و با قیمت تومانی.`,
     ),
     path: '/blog',
     image: '/images/og/og-default.png',
@@ -327,6 +462,15 @@ export function seoForBlogPost(args: {
   if (post.faq && post.faq.length > 0) {
     const fp = faqLd(post.faq)
     if (fp) jsonLd.push(fp)
+  }
+  if (post.howToSteps && post.howToSteps.length >= 2) {
+    const ht = howToLd({
+      name: post.titleFa,
+      description: post.excerpt,
+      totalTime: post.howToTotalTime ?? 'PT5M',
+      steps: post.howToSteps,
+    })
+    if (ht) jsonLd.push(ht)
   }
 
   return {

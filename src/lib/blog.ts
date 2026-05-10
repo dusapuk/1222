@@ -50,6 +50,17 @@ export type BlogFaq = {
   answer: string
 }
 
+export type BlogHowToStep = {
+  /** Persian heading («ورود به اکانت», «پرداخت تومانی»...). */
+  name: string
+  /** Step body — plain Persian text. */
+  text: string
+  /** Optional illustration (site-relative path). */
+  image?: string
+  /** Optional anchor URL («به این مرحله برو» in HowTo card). */
+  url?: string
+}
+
 export type BlogPost = {
   slug: string
   /** Persian H1 — also used in `<title>`. */
@@ -66,6 +77,17 @@ export type BlogPost = {
   keywords: string[]
   /** Author name. Defaults to the editorial brand. */
   author: string
+  /**
+   * Optional author landing page (relative path). When set,
+   * `Article.author.url` points here — strong E-E-A-T signal.
+   */
+  authorUrl?: string
+  /**
+   * Optional list of public author profiles (LinkedIn, Twitter, ...).
+   * Becomes `Article.author.sameAs` so Google can confirm the same
+   * Person across the web.
+   */
+  authorSameAs?: string[]
   /** ISO date the post was first published. */
   datePublished: string
   /** ISO date the post was last edited. Falls back to `datePublished`. */
@@ -86,6 +108,14 @@ export type BlogPost = {
   sections: BlogSection[]
   /** FAQ Q&A. Emitted both as visible UI and as `FAQPage` JSON-LD. */
   faq?: BlogFaq[]
+  /**
+   * Optional how-to steps. When set with at least 2 entries, the post
+   * emits a `HowTo` rich result alongside `Article` — picks up the
+   * step-by-step SERP card on activation / setup posts.
+   */
+  howToSteps?: BlogHowToStep[]
+  /** ISO 8601 duration for the how-to (e.g. `PT5M`). Defaults to PT5M. */
+  howToTotalTime?: string
 }
 
 const PUBLISHED = '2026-05-01'
