@@ -31,6 +31,8 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import {
+  seoForBlogIndex,
+  seoForBlogPost,
   seoForCategoriesIndex,
   seoForCategory,
   seoForHome,
@@ -49,11 +51,14 @@ import {
   SITE_NAME,
   TWITTER_HANDLE,
   absoluteUrl,
+  getGeoMetas,
   getVerificationMetas,
   imageMimeFor,
 } from '../src/lib/seo'
 import type { SEOConfig } from '../src/hooks/useSEO'
 import type { Category, Marketplace, Plan, Service, ServiceDetail } from '../src/lib/data'
+import { BLOG_POSTS, getBlogPostsSorted } from '../src/lib/blog'
+import type { ServiceReview } from '../src/lib/reviews'
 
 // Hero image per category — inlined here to avoid pulling lucide-react
 // (and thus the JSX runtime) into the Node prerender script.
@@ -103,6 +108,7 @@ const ssrModule = (await import(pathToFileURL(ssrEntryPath).href)) as {
     params?: Record<string, string>
     marketplace: Marketplace
     serviceDetail?: ServiceDetail | null
+    serviceReviews?: { slug: string; reviews: ServiceReview[] | null } | null
   }) => { html: string }
 }
 
@@ -134,6 +140,8 @@ type Route = {
   seo: SEOConfig
   /** Optional per-service detail to seed before SSR render. */
   serviceDetail?: ServiceDetail | null
+  /** Optional per-service review payload to seed before SSR render. */
+  serviceReviews?: { slug: string; reviews: ServiceReview[] | null } | null
   /** When true, do not run SSR for this route (kept as a spinner stub). */
   skipSsr?: boolean
 }
@@ -192,12 +200,36 @@ for (const category of marketplace.categories) {
 }
 
 const servicesDir = resolve(repoRoot, 'public/data/services')
+const reviewsDir = resolve(repoRoot, 'public/data/reviews')
 
 function loadDetail(slug: string): ServiceDetail | null {
   const path = resolve(servicesDir, `${slug}.json`)
   if (!existsSync(path)) return null
   try {
     return JSON.parse(readFileSync(path, 'utf8')) as ServiceDetail
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Read verified reviews for a slug from `public/data/reviews/<slug>.json`
+ * if the file exists. Accepts both the wrapper format
+ * (`{slug, reviews}`) and a raw array. Returns null when no file is
+ * present (most slugs) so SSR + JSON-LD agree to omit the review block.
+ */
+function loadReviews(slug: string): ServiceReview[] | null {
+  const path = resolve(reviewsDir, `${slug}.json`)
+  if (!existsSync(path)) return null
+  try {
+    const parsed = JSON.parse(readFileSync(path, 'utf8')) as
+      | { reviews?: ServiceReview[] }
+      | ServiceReview[]
+    const list = Array.isArray(parsed) ? parsed : parsed.reviews ?? []
+    if (!Array.isArray(list) || list.length === 0) return null
+    return list.filter(
+      (r) => Number.isFinite(r.rating) && r.rating >= 1 && r.rating <= 5,
+    )
   } catch {
     return null
   }
@@ -211,11 +243,32 @@ for (const service of marketplace.services) {
     .filter((p) => p.priceIrt != null && p.isActive)
     .sort((a, b) => (a.priceIrt ?? 0) - (b.priceIrt ?? 0))[0] ?? null
   const detail = loadDetail(service.slug)
+  const reviews = loadReviews(service.slug)
   routes.push({
     path: `/s/${service.slug}`,
     outFile: fileFor(`/s/${service.slug}`),
-    seo: seoForService({ service, category, plans, cheapest, detail }),
+    seo: seoForService({ service, category, plans, cheapest, detail, reviews }),
     serviceDetail: detail,
+    serviceReviews: { slug: service.slug, reviews },
+  })
+}
+
+// Blog: index + per-post pages. Posts are pure data (TypeScript), so
+// no extra IO is needed — we already imported BLOG_POSTS above.
+const sortedBlogPosts = getBlogPostsSorted()
+routes.push({
+  path: '/blog',
+  outFile: fileFor('/blog'),
+  seo: seoForBlogIndex({ posts: sortedBlogPosts }),
+})
+for (const post of BLOG_POSTS) {
+  const primaryService = marketplace.services.find(
+    (s) => s.slug === post.primaryServiceSlug,
+  )
+  routes.push({
+    path: `/blog/${post.slug}`,
+    outFile: fileFor(`/blog/${post.slug}`),
+    seo: seoForBlogPost({ post, primaryService: primaryService ?? null }),
   })
 }
 
@@ -316,6 +369,14 @@ function buildHead(seo: SEOConfig): {
     tags.push(metaTag('name', v.name, v.content))
   }
 
+  // Legacy geo metas — Yandex/Bing still consult `geo.region`,
+  // `geo.placename`, `geo.position` and `ICBM` for local relevance.
+  // Empty-by-default: getGeoMetas returns nothing if env vars aren't
+  // set, so we never emit blank meta tags.
+  for (const g of getGeoMetas()) {
+    tags.push(metaTag('name', g.name, g.content))
+  }
+
   // Per-page LCP image preload — for product pages the hero is the
   // service logo, which is also the og:image. Preloading it lets the
   // browser fetch it in parallel with the JS bundle and shaves
@@ -394,6 +455,7 @@ function applyTemplate(template: string, route: Route): string {
         params,
         marketplace,
         serviceDetail: route.serviceDetail,
+        serviceReviews: route.serviceReviews,
       }).html
     } catch (err) {
       console.warn(`[prerender] SSR failed for ${route.path}:`, err)

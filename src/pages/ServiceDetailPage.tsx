@@ -28,6 +28,12 @@ import {
   type Service,
   type ServiceDetail,
 } from '../lib/data'
+import {
+  getCachedServiceReviews,
+  loadServiceReviews,
+  summarizeReviews,
+  type ServiceReview,
+} from '../lib/reviews'
 import { ProductCard } from '../components/ProductCard'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { AppLink } from '../components/AppLink'
@@ -93,6 +99,28 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
     }
   }, [service])
 
+  // Verified user reviews — absent for most slugs (file not committed),
+  // null/empty array means "don't show reviews UI / aggregateRating".
+  // The seeded sync cache mirrors the prerender step so SSR keeps the
+  // same tree across hydrations.
+  const [reviews, setReviews] = useState<ServiceReview[] | null>(() => {
+    const seeded = getCachedServiceReviews(slug)
+    return seeded ?? null
+  })
+  useEffect(() => {
+    let cancelled = false
+    if (!service) {
+      setReviews(null)
+      return
+    }
+    loadServiceReviews(service.slug).then((r) => {
+      if (!cancelled) setReviews(r)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [service])
+
   useSEO(
     service
       ? seoForService({
@@ -101,6 +129,7 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
           plans: servicePlans,
           cheapest: cheapestPlan,
           detail,
+          reviews,
         })
       : seoForServiceNotFound(slug),
   )
@@ -226,6 +255,8 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
               </ul>
             </div>
           )}
+
+          <ReviewsSection reviews={reviews} serviceTitleFa={service.titleFa} />
         </div>
 
         {/* purchase card */}
@@ -512,6 +543,117 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
           </div>
         </section>
       )}
+    </div>
+  )
+}
+
+/**
+ * Display block for verified user reviews. Renders nothing when fewer
+ * than 3 verified reviews exist (matches the JSON-LD threshold) so we
+ * never advertise a half-empty review section. This component is the
+ * visible counterpart to the `aggregateRating` + `review` block in
+ * `productLd()` so SERP and on-page UI stay consistent.
+ */
+function ReviewsSection({
+  reviews,
+  serviceTitleFa,
+}: {
+  reviews: ServiceReview[] | null
+  serviceTitleFa: string
+}) {
+  const summary = summarizeReviews(reviews)
+  if (!summary || !reviews) return null
+
+  // Show all verified reviews up to a sensible cap on detail pages.
+  const verifiedReviews = reviews
+    .filter((r) => r.verified !== false && r.rating > 0 && r.rating <= 5)
+    .slice(0, 12)
+
+  return (
+    <div className="mt-5 bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+        <h2 className="text-lg font-black text-white">
+          نظرات کاربران درباره {serviceTitleFa}
+        </h2>
+        <div className="flex items-center gap-3 bg-[#0e0f15] border border-[#1e1f2a] rounded-xl px-4 py-2 self-start md:self-auto">
+          <div className="flex items-center gap-1">
+            {Array.from({ length: 5 }).map((_, i) => {
+              const filled = i < Math.round(summary.average)
+              return (
+                <svg
+                  key={i}
+                  width={16}
+                  height={16}
+                  viewBox="0 0 20 20"
+                  fill={filled ? '#d4a853' : 'transparent'}
+                  stroke={filled ? '#d4a853' : '#3a3b48'}
+                  strokeWidth="1.5"
+                  aria-hidden="true"
+                >
+                  <path d="M10 1.5l2.6 5.3 5.9.9-4.3 4.2 1 5.9L10 15l-5.2 2.7 1-5.9L1.5 7.7l5.9-.9z" />
+                </svg>
+              )
+            })}
+          </div>
+          <div className="flex flex-col leading-tight">
+            <span className="text-base font-black text-white">
+              {toPersianDigits(summary.average.toFixed(1))}
+            </span>
+            <span className="text-[10px] text-[#6b6c78]">
+              از {toPersianDigits(summary.count)} نظر
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <ul className="space-y-3">
+        {verifiedReviews.map((r, i) => (
+          <li
+            key={i}
+            className="bg-[#0e0f15] border border-[#1e1f2a] rounded-xl p-4"
+          >
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-white">
+                  {r.author || 'کاربر پی‌کارت'}
+                </span>
+                {r.datePublished && (
+                  <span className="text-[10px] text-[#6b6c78]">
+                    {r.datePublished}
+                  </span>
+                )}
+              </div>
+              <div
+                className="flex items-center gap-0.5"
+                aria-label={`امتیاز ${r.rating} از ۵`}
+              >
+                {Array.from({ length: 5 }).map((_, j) => {
+                  const filled = j < r.rating
+                  return (
+                    <svg
+                      key={j}
+                      width={12}
+                      height={12}
+                      viewBox="0 0 20 20"
+                      fill={filled ? '#d4a853' : 'transparent'}
+                      stroke={filled ? '#d4a853' : '#3a3b48'}
+                      strokeWidth="1.5"
+                      aria-hidden="true"
+                    >
+                      <path d="M10 1.5l2.6 5.3 5.9.9-4.3 4.2 1 5.9L10 15l-5.2 2.7 1-5.9L1.5 7.7l5.9-.9z" />
+                    </svg>
+                  )
+                })}
+              </div>
+            </div>
+            {r.body && (
+              <p className="text-xs text-[#c4c5d0] leading-7 whitespace-pre-line">
+                {r.body}
+              </p>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

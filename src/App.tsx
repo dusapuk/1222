@@ -10,6 +10,8 @@ import { SearchPage } from './pages/SearchPage'
 import { ServiceDetailPage } from './pages/ServiceDetailPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { StaticPageView } from './pages/StaticPage'
+import { BlogIndexPage } from './pages/BlogIndexPage'
+import { BlogPostPage } from './pages/BlogPostPage'
 import type { SortKey } from './lib/data'
 import { findStaticPage } from './lib/staticPages'
 
@@ -87,6 +89,15 @@ function App({ initialPath, initialParams }: AppProps = {}) {
 
     if (path === '/categories') {
       return <CategoriesPage onNavigate={navigate} />
+    }
+
+    if (path === '/blog' || path === '/blog/') {
+      return <BlogIndexPage onNavigate={navigate} />
+    }
+
+    if (path.startsWith('/blog/')) {
+      const slug = decodeURIComponent(path.slice(6).replace(/\/$/, ''))
+      return <BlogPostPage slug={slug} onNavigate={navigate} />
     }
 
     if (path === '/search') {

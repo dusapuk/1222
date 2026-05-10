@@ -5,14 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node scripts/generate-sitemap.mjs && tsx scripts/enrich-marketplace.ts",
+    "prebuild": "tsx scripts/generate-sitemap.ts && tsx scripts/generate-rss.ts && tsx scripts/enrich-marketplace.ts",
     "build:client": "vite build",
     "build:ssr": "vite build --ssr src/entry-server.tsx --outDir dist-ssr --emptyOutDir",
     "build": "tsc -b && npm run build:client && npm run build:ssr && tsx scripts/prerender.ts",
-    "predev": "node scripts/generate-sitemap.mjs && tsx scripts/enrich-marketplace.ts",
+    "predev": "tsx scripts/generate-sitemap.ts && tsx scripts/generate-rss.ts && tsx scripts/enrich-marketplace.ts",
     "lint": "eslint .",
     "preview": "vite preview",
-    "sitemap": "node scripts/generate-sitemap.mjs",
+    "sitemap": "tsx scripts/generate-sitemap.ts",
+    "rss": "tsx scripts/generate-rss.ts",
     "enrich": "tsx scripts/enrich-marketplace.ts",
     "prerender": "tsx scripts/prerender.ts"
   },

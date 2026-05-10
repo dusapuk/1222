@@ -20,6 +20,7 @@ import {
   type Marketplace,
   type ServiceDetail,
 } from './lib/data'
+import { seedServiceReviews, type ServiceReview } from './lib/reviews'
 
 export type RenderInput = {
   /** Path the route would have under `window.location.pathname`. */
@@ -30,6 +31,12 @@ export type RenderInput = {
   marketplace: Marketplace
   /** Optional per-service detail to seed before render (service pages). */
   serviceDetail?: ServiceDetail | null
+  /**
+   * Optional per-service reviews to seed before render. When provided,
+   * the SSR tree renders the reviews UI inline so server HTML matches
+   * the post-hydration tree.
+   */
+  serviceReviews?: { slug: string; reviews: ServiceReview[] | null } | null
 }
 
 export type RenderOutput = {
@@ -50,6 +57,9 @@ export function render(input: RenderInput): RenderOutput {
     // the long description / FAQ before any effect runs.
     const slug = input.serviceDetail?.slug
     if (slug) seedServiceDetail(slug, input.serviceDetail)
+  }
+  if (input.serviceReviews) {
+    seedServiceReviews(input.serviceReviews.slug, input.serviceReviews.reviews)
   }
 
   const html = renderToString(

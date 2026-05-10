@@ -1,5 +1,10 @@
 User-agent: *
 Allow: /
+# Explicitly allow the blog and RSS feed (some over-zealous robots
+# config inheritance treats unfamiliar paths as disallowed by default).
+Allow: /blog
+Allow: /blog/
+Allow: /rss.xml
 
 # Internal site search results — duplicate, low-quality content. The
 # /search page is also tagged noindex via meta robots, but we disallow

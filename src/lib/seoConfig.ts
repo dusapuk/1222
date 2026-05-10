@@ -11,8 +11,10 @@
  */
 import type { Category, Plan, Service, ServiceDetail } from './data'
 import type { SEOConfig } from '../hooks/useSEO'
-import { absoluteUrl, clampDescription } from './seo'
+import { absoluteUrl, clampDescription, SITE_NAME } from './seo'
 import {
+  articleLd,
+  blogLd,
   breadcrumbLd,
   collectionPageLd,
   faqLd,
@@ -22,6 +24,8 @@ import {
   websiteLd,
 } from './jsonld'
 import type { StaticPage } from './staticPages'
+import type { BlogPost } from './blog'
+import type { ServiceReview } from './reviews'
 
 export function seoForHome(args: {
   categoryCount: number
@@ -154,8 +158,9 @@ export function seoForService(args: {
   plans: Plan[]
   cheapest: Plan | null
   detail?: ServiceDetail | null
+  reviews?: ServiceReview[] | null
 }): SEOConfig {
-  const { service, category, plans, cheapest, detail } = args
+  const { service, category, plans, cheapest, detail, reviews } = args
   const path = `/s/${service.slug}`
 
   // SEO-overridden title/description from the original CMS — fall back
@@ -176,6 +181,7 @@ export function seoForService(args: {
     cheapest,
     path,
     longDescription: detail?.descriptionFa,
+    reviews,
   })
 
   const jsonLd: Record<string, unknown>[] = [
@@ -278,5 +284,60 @@ export function seoForNotFound(path = '/404'): SEOConfig {
       'صفحه مورد نظر شما در پی‌کارت پیدا نشد. به صفحه اصلی یا دسته‌بندی‌ها بازگردید.',
     path,
     noindex: true,
+  }
+}
+
+export function seoForBlogIndex(args: { posts: BlogPost[] }): SEOConfig {
+  const { posts } = args
+  return {
+    title: 'وبلاگ خرید اشتراک‌های دیجیتال',
+    description: clampDescription(
+      `راهنمای خرید اشتراک ChatGPT Plus، Midjourney، Canva Pro، Adobe Creative Cloud، Apple Music و ده‌ها سرویس دیجیتال دیگر از ایران در ${SITE_NAME} — به‌روزرسانی مرتب با قیمت تومانی و راهنمای فعال‌سازی.`,
+    ),
+    path: '/blog',
+    image: '/images/og/og-default.png',
+    imageAlt: 'وبلاگ پی‌کارت — راهنمای خرید سرویس‌های دیجیتال',
+    imageWidth: 1200,
+    imageHeight: 630,
+    jsonLd: [
+      breadcrumbLd([{ name: 'وبلاگ', path: '/blog' }]),
+      blogLd({ posts }),
+    ],
+  }
+}
+
+export function seoForBlogPost(args: {
+  post: BlogPost
+  primaryService?: Service | null
+}): SEOConfig {
+  const { post, primaryService } = args
+  const path = `/blog/${post.slug}`
+
+  const breadcrumbs = breadcrumbLd([
+    { name: 'وبلاگ', path: '/blog' },
+    { name: post.titleFa, path },
+  ])
+  const article = articleLd({
+    post,
+    primaryServiceUrl: primaryService ? absoluteUrl('/s/' + primaryService.slug) : null,
+    primaryServiceName: primaryService?.titleFa ?? null,
+  })
+
+  const jsonLd: Array<Record<string, unknown> | null> = [breadcrumbs, article]
+  if (post.faq && post.faq.length > 0) {
+    const fp = faqLd(post.faq)
+    if (fp) jsonLd.push(fp)
+  }
+
+  return {
+    title: post.titleFa,
+    description: clampDescription(post.excerpt, 200),
+    path,
+    image: post.coverImage,
+    imageAlt: post.coverAlt,
+    imageWidth: 1200,
+    imageHeight: 630,
+    ogType: 'article',
+    jsonLd,
   }
 }

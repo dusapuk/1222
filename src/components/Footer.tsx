@@ -13,6 +13,7 @@ import { ENAMAD_IFRAME_HTML, SOCIAL_LINKS, type SocialNetwork } from '../lib/seo
 import { AppLink } from './AppLink'
 
 const supportLinks: { label: string; path: string }[] = [
+  { label: 'وبلاگ', path: '/blog' },
   { label: 'سوالات متداول', path: '/faq' },
   { label: 'راهنمای خرید', path: '/guide' },
   { label: 'شرایط بازگشت وجه', path: '/refund' },

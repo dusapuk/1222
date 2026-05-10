@@ -11,14 +11,20 @@ import {
   CONTACT_ADDRESS,
   CONTACT_EMAIL,
   CONTACT_PHONE_TEL,
+  CURRENCIES_ACCEPTED,
+  GEO_MAP_URL,
+  PAYMENT_ACCEPTED,
   SITE_NAME,
   SITE_NAME_EN,
   SITE_URL,
   SOCIAL_LINKS,
   absoluteUrl,
   clampDescription,
+  getGeoCoordinates,
 } from './seo'
 import type { Category, Plan, Service } from './data'
+import type { ServiceReview } from './reviews'
+import type { BlogPost } from './blog'
 
 /**
  * Hard-cap validity for short-lived offers. Schema.org Offer prefers a
@@ -38,14 +44,23 @@ type Json = Record<string, unknown>
 
 export function organizationLd(): Json {
   const sameAs = SOCIAL_LINKS.map((s) => s.url.trim()).filter(Boolean)
+  const coords = getGeoCoordinates()
+  const currencies = CURRENCIES_ACCEPTED.split(',').map((s) => s.trim()).filter(Boolean)
+  const payments = PAYMENT_ACCEPTED.split(',').map((s) => s.trim()).filter(Boolean)
+
+  // Use a multi-typed entity: stays a regular Organization for the
+  // generic knowledge graph, declares OnlineStore so Google understands
+  // it's a marketplace, and declares LocalBusiness so the geo +
+  // currenciesAccepted + paymentAccepted fields below are recognised.
   const org: Json = {
     '@context': 'https://schema.org',
-    '@type': 'Organization',
+    '@type': ['Organization', 'OnlineStore', 'LocalBusiness'],
     '@id': SITE_URL + '/#organization',
     name: SITE_NAME,
     alternateName: SITE_NAME_EN,
     url: SITE_URL + '/',
     logo: absoluteUrl('/favicon.svg'),
+    image: absoluteUrl('/images/og/og-default.png'),
     telephone: CONTACT_PHONE_TEL,
     email: CONTACT_EMAIL,
     address: {
@@ -62,7 +77,22 @@ export function organizationLd(): Json {
         areaServed: 'IR',
       },
     ],
+    areaServed: {
+      '@type': 'Country',
+      name: 'Iran',
+      identifier: 'IR',
+    },
   }
+  if (currencies.length) org.currenciesAccepted = currencies.join(', ')
+  if (payments.length) org.paymentAccepted = payments.join(', ')
+  if (coords) {
+    org.geo = {
+      '@type': 'GeoCoordinates',
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+    }
+  }
+  if (GEO_MAP_URL) org.hasMap = GEO_MAP_URL
   if (sameAs.length > 0) org.sameAs = sameAs
   return org
 }
@@ -150,8 +180,16 @@ export function productLd(args: {
   path: string
   /** Long marketing description (preferred for richer Product snippets). */
   longDescription?: string | null
+  /**
+   * Verified user reviews. When 3+ entries are present, the Product
+   * payload gets `aggregateRating` + the first 5 reviews inline.
+   * Without enough reviews we omit both fields rather than fabricate a
+   * rating — fake aggregateRating violates Google's review snippets
+   * guidelines and risks a manual penalty.
+   */
+  reviews?: ServiceReview[] | null
 }): Json {
-  const { service, category, plans, cheapest, path, longDescription } = args
+  const { service, category, plans, cheapest, path, longDescription, reviews } = args
   const url = absoluteUrl(path)
 
   const description = clampDescription(
@@ -184,7 +222,58 @@ export function productLd(args: {
     product.image = absoluteUrl(service.logoUrl)
   }
   if (offers) product.offers = offers
+
+  const reviewBlocks = buildReviewBlocks(reviews ?? [])
+  if (reviewBlocks) {
+    product.aggregateRating = reviewBlocks.aggregateRating
+    product.review = reviewBlocks.reviews
+  }
+
   return product
+}
+
+/**
+ * Build aggregateRating + per-review payloads from operator-provided
+ * review data. Only emits the JSON when at least 3 verified reviews
+ * exist (Google's documented minimum for usable aggregate snippets and
+ * a sanity threshold against single-review noise).
+ */
+function buildReviewBlocks(reviews: ServiceReview[]):
+  | { aggregateRating: Json; reviews: Json[] }
+  | null {
+  const verified = reviews.filter(
+    (r) => r.verified !== false && r.rating > 0 && r.rating <= 5,
+  )
+  if (verified.length < 3) return null
+  const sum = verified.reduce((acc, r) => acc + r.rating, 0)
+  const avg = sum / verified.length
+  const aggregateRating: Json = {
+    '@type': 'AggregateRating',
+    ratingValue: Math.round(avg * 10) / 10,
+    bestRating: 5,
+    worstRating: 1,
+    reviewCount: verified.length,
+    ratingCount: verified.length,
+  }
+  const reviewLd = verified.slice(0, 5).map((r) => {
+    const entry: Json = {
+      '@type': 'Review',
+      reviewRating: {
+        '@type': 'Rating',
+        ratingValue: r.rating,
+        bestRating: 5,
+        worstRating: 1,
+      },
+      author: {
+        '@type': 'Person',
+        name: r.author || 'کاربر پی‌کارت',
+      },
+    }
+    if (r.datePublished) entry.datePublished = r.datePublished
+    if (r.body) entry.reviewBody = r.body
+    return entry
+  })
+  return { aggregateRating, reviews: reviewLd }
 }
 
 function buildOffers(args: {
@@ -301,6 +390,93 @@ export function faqLd(items: FaqItem[]): Json | null {
         '@type': 'Answer',
         text: i.answer,
       },
+    })),
+  }
+}
+
+/**
+ * `Article` payload for a single blog post. We use the more specific
+ * `BlogPosting` subtype — Google explicitly recognises it for the
+ * Article rich result and recommends it for blog content.
+ *
+ * `mainEntityOfPage` lets Google pin the article to its canonical page,
+ * `publisher` references the global Organization node, and `about`
+ * points at the primary service entity so the article and product are
+ * semantically linked in the knowledge graph.
+ */
+export function articleLd(args: {
+  post: BlogPost
+  /**
+   * Optional URL of the primary service the post promotes — used as
+   * `about` so Google understands the entity association between blog
+   * post and product page.
+   */
+  primaryServiceUrl?: string | null
+  primaryServiceName?: string | null
+}): Json {
+  const { post, primaryServiceUrl, primaryServiceName } = args
+  const url = absoluteUrl('/blog/' + post.slug)
+  const image = post.coverImage ? absoluteUrl(post.coverImage) : absoluteUrl('/images/og/og-default.png')
+  const dateModified = post.dateModified || post.datePublished
+  const article: Json = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    '@id': url + '#article',
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': url,
+    },
+    headline: post.titleFa,
+    description: clampDescription(post.excerpt, 200),
+    image,
+    inLanguage: 'fa-IR',
+    datePublished: post.datePublished,
+    dateModified,
+    url,
+    author: {
+      '@type': 'Person',
+      name: post.author,
+    },
+    publisher: { '@id': SITE_URL + '/#organization' },
+    keywords: post.keywords.join(', '),
+    articleSection: post.primaryCategorySlug,
+    isPartOf: { '@id': SITE_URL + '/blog#blog' },
+  }
+  if (primaryServiceUrl && primaryServiceName) {
+    article.about = {
+      '@type': 'Product',
+      name: primaryServiceName,
+      url: primaryServiceUrl,
+    }
+  }
+  return article
+}
+
+/**
+ * Top-level `Blog` payload for the /blog index page. References every
+ * post as `blogPost`. Google uses this to discover the article hub when
+ * the post-level Article schemas are scattered across separate URLs.
+ */
+export function blogLd(args: { posts: BlogPost[] }): Json {
+  const { posts } = args
+  const url = SITE_URL + '/blog'
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    '@id': url + '#blog',
+    name: SITE_NAME + ' — وبلاگ',
+    description:
+      'راهنمای خرید اشتراک‌های دیجیتال، مقایسه پلن‌ها، فعال‌سازی سرویس‌های بین‌المللی برای کاربران ایرانی.',
+    inLanguage: 'fa-IR',
+    url,
+    publisher: { '@id': SITE_URL + '/#organization' },
+    blogPost: posts.map((post) => ({
+      '@type': 'BlogPosting',
+      '@id': absoluteUrl('/blog/' + post.slug) + '#article',
+      headline: post.titleFa,
+      url: absoluteUrl('/blog/' + post.slug),
+      datePublished: post.datePublished,
+      dateModified: post.dateModified || post.datePublished,
     })),
   }
 }

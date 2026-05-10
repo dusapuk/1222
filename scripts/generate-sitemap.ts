@@ -24,6 +24,8 @@ import { readFileSync, writeFileSync, mkdirSync, statSync, existsSync } from 'no
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { getBlogPostsSorted } from '../src/lib/blog'
+
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(__dirname, '..')
 
@@ -33,19 +35,26 @@ const servicesDir = resolve(repoRoot, 'public/data/services')
 const publicDir = resolve(repoRoot, 'public')
 const outPath = resolve(publicDir, 'sitemap.xml')
 
-/** @typedef {{ slug: string; categoryId?: string; logoUrl?: string|null; titleFa?: string }} Service */
-/** @typedef {{ id?: string; slug: string; titleFa?: string }} Category */
+type Service = {
+  slug: string
+  categoryId?: string
+  logoUrl?: string | null
+  titleFa?: string
+}
+type Category = { id?: string; slug: string; titleFa?: string }
 
-/** @type {{ categories: Category[]; services: Service[] }} */
-const data = JSON.parse(readFileSync(dataPath, 'utf8'))
+const data = JSON.parse(readFileSync(dataPath, 'utf8')) as {
+  categories: Category[]
+  services: Service[]
+}
 
 const today = new Date().toISOString().slice(0, 10)
 
-function dateOnly(d) {
+function dateOnly(d: string | number | Date): string {
   return new Date(d).toISOString().slice(0, 10)
 }
 
-function safeMtime(filePath, fallback) {
+function safeMtime(filePath: string, fallback: string): string {
   try {
     return dateOnly(statSync(filePath).mtimeMs)
   } catch {
@@ -59,8 +68,8 @@ const marketplaceMtime = safeMtime(dataPath, today)
 // in each category. We use the most recent per-service mtime as the
 // category page's lastmod, since the page lists all services in that
 // category and changes whenever any of them is edited.
-const servicesByCategory = new Map()
-const categoryLatestMtime = new Map()
+const servicesByCategory = new Map<string, Service[]>()
+const categoryLatestMtime = new Map<string, number>()
 for (const s of data.services ?? []) {
   if (!s.slug || !s.categoryId) continue
   const arr = servicesByCategory.get(s.categoryId) ?? []
@@ -74,7 +83,7 @@ for (const s of data.services ?? []) {
   }
 }
 
-function escapeXml(value) {
+function escapeXml(value: unknown): string {
   return String(value)
     .replace(/&/g, '&amp;')
     .replace(/"/g, '&quot;')
@@ -83,18 +92,21 @@ function escapeXml(value) {
     .replace(/>/g, '&gt;')
 }
 
-function absoluteImage(loc) {
+function absoluteImage(loc: string | null | undefined): string | null {
   if (!loc) return null
   if (/^https?:\/\//i.test(loc)) return loc
   return SITE_URL + (loc.startsWith('/') ? '' : '/') + loc
 }
 
-/**
- * @param {string} loc
- * @param {{ priority?: string; changefreq?: string; lastmod?: string;
- *   images?: Array<{ loc: string; title?: string; caption?: string }> }} [opts]
- */
-function url(loc, opts = {}) {
+type SitemapImage = { loc: string; title?: string; caption?: string }
+type UrlOpts = {
+  priority?: string
+  changefreq?: string
+  lastmod?: string
+  images?: SitemapImage[]
+}
+
+function url(loc: string, opts: UrlOpts = {}): string {
   const {
     priority = '0.6',
     changefreq = 'weekly',
@@ -122,7 +134,7 @@ function url(loc, opts = {}) {
   return lines.join('\n')
 }
 
-const entries = []
+const entries: string[] = []
 
 // Static pages
 entries.push(
@@ -150,7 +162,7 @@ for (const slug of TRUST_PAGES) {
 }
 
 // Category pages — embed the static category hero image as a sitemap image.
-const categoryImages = {
+const categoryImages: Record<string, string> = {
   'ai-assistants': '/images/categories/ai-assistants.jpg',
   'ai-image': '/images/categories/ai-image.jpg',
   'ai-video': '/images/categories/ai-video.jpg',
@@ -211,6 +223,43 @@ for (const s of data.services ?? []) {
   )
 }
 
+// Blog index + per-post URLs. Imported directly from `src/lib/blog.ts`
+// via tsx so the sitemap always matches the in-repo content store.
+const blogPosts = getBlogPostsSorted()
+if (blogPosts.length > 0) {
+  const indexMtime =
+    [...blogPosts.map((p) => p.dateModified || p.datePublished)]
+      .filter(Boolean)
+      .sort()
+      .slice(-1)[0] || today
+  entries.push(
+    url('/blog', {
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: indexMtime,
+    }),
+  )
+  for (const post of blogPosts) {
+    const lastmod = post.dateModified || post.datePublished || today
+    const images: SitemapImage[] = []
+    if (post.coverImage) {
+      images.push({
+        loc: post.coverImage,
+        title: post.titleFa,
+        caption: post.coverAlt,
+      })
+    }
+    entries.push(
+      url(`/blog/${encodeURIComponent(post.slug)}`, {
+        priority: '0.7',
+        changefreq: 'monthly',
+        lastmod,
+        images,
+      }),
+    )
+  }
+}
+
 const xml =
   '<?xml version="1.0" encoding="UTF-8"?>\n' +
   '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap-0.9"\n' +
@@ -225,5 +274,5 @@ const totalUrls = entries.length
 const cats = data.categories?.length ?? 0
 const svcs = data.services?.length ?? 0
 console.log(
-  `[sitemap] wrote ${outPath} — ${totalUrls} URLs (${cats} categories, ${svcs} services)`,
+  `[sitemap] wrote ${outPath} — ${totalUrls} URLs (${cats} categories, ${svcs} services, ${blogPosts.length} blog posts)`,
 )
