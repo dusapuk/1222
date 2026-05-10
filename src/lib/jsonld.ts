@@ -21,6 +21,7 @@ import {
   SOCIAL_LINKS,
   absoluteUrl,
   clampDescription,
+  getExternalReviewProfileUrls,
   getGeoCoordinates,
   stripHtml,
 } from './seo'
@@ -58,7 +59,13 @@ export function organizationLd(args?: {
    */
   categories?: Array<Pick<Category, 'slug' | 'titleFa' | 'description'>>
 }): Json {
-  const sameAs = SOCIAL_LINKS.map((s) => s.url.trim()).filter(Boolean)
+  // Combine brand social profiles with verified external review-platform
+  // profiles (Trustpilot / Google Business) so the Knowledge Graph
+  // links the marketplace entity to every public surface that mentions
+  // it. Roadmap B5: matches the dicardo / license-market pattern.
+  const socialUrls = SOCIAL_LINKS.map((s) => s.url.trim()).filter(Boolean)
+  const reviewUrls = getExternalReviewProfileUrls()
+  const sameAs = [...socialUrls, ...reviewUrls]
   const coords = getGeoCoordinates()
   const currencies = CURRENCIES_ACCEPTED.split(',').map((s) => s.trim()).filter(Boolean)
   const payments = PAYMENT_ACCEPTED.split(',').map((s) => s.trim()).filter(Boolean)
@@ -906,6 +913,30 @@ export type HowToStep = {
 }
 
 /**
+ * Parse an ISO 8601 minute-or-hour duration into total minutes.
+ * Returns 0 when the input doesn't match the supported subset
+ * (`PT<n>M`, `PT<n>H`, or `PT<h>H<m>M`). Used to decide whether a
+ * HowTo also qualifies as a `Course` (>= 15 minutes).
+ */
+function parseIsoDurationMinutes(duration: string | null | undefined): number {
+  if (!duration) return 0
+  const m = /^PT(?:(\d+)H)?(?:(\d+)M)?$/.exec(duration.trim())
+  if (!m) return 0
+  const hours = m[1] ? Number.parseInt(m[1], 10) : 0
+  const minutes = m[2] ? Number.parseInt(m[2], 10) : 0
+  return hours * 60 + minutes
+}
+
+/**
+ * Threshold at which a `HowTo` post also gets a `Course` schema (in
+ * addition to `HowTo`). Roadmap reference C3: 5+ steps OR
+ * totalTime >= PT15M. Picked by Google to differentiate hands-on
+ * tutorials (HowTo) from longer educational walk-throughs (Course).
+ */
+const COURSE_MIN_STEPS = 5
+const COURSE_MIN_TOTAL_MINUTES = 15
+
+/**
  * `HowTo` payload — emits a step-by-step rich card in Google SERP
  * (separate from the FAQPage card). Particularly effective for
  * activation / setup posts («فعال‌سازی ChatGPT»,
@@ -948,6 +979,73 @@ export function howToLd(args: {
       if (s.url) entry.url = absoluteUrl(s.url)
       return entry
     }),
+  }
+}
+
+/**
+ * `Course` payload — emitted *in addition to* `HowTo` when a tutorial
+ * crosses a length threshold (5+ steps OR totalTime >= 15 minutes).
+ *
+ * Goal: longer activation walk-throughs («راهنمای کامل ساخت اپل
+ * آیدی», «راه‌اندازی Adobe Creative Cloud») also pick up Google's
+ * Course rich result, which renders a separate card with provider +
+ * workload metadata. The card is most visible on educational
+ * intent queries («آموزش فعال‌سازی X»).
+ *
+ * Returns null when the input doesn't meet the length threshold or
+ * has fewer than 2 steps — we never emit a stub Course schema.
+ *
+ * Roadmap reference: C3 in `pikart-roadmap-to-1.md`.
+ */
+export function courseLd(args: {
+  name: string
+  description: string
+  /** Canonical URL of the tutorial post. */
+  url: string
+  /** ISO 8601 duration, e.g. `PT15M`. Defaults to PT15M when omitted. */
+  totalTime?: string | null
+  steps: HowToStep[]
+}): Json | null {
+  const cleaned = (args.steps ?? [])
+    .map((s) => ({
+      name: (s.name || '').trim(),
+      text: (s.text || '').trim(),
+    }))
+    .filter((s) => s.name.length > 0 && s.text.length > 0)
+  if (cleaned.length < 2) return null
+  const minutes = parseIsoDurationMinutes(args.totalTime)
+  const longEnough =
+    cleaned.length >= COURSE_MIN_STEPS || minutes >= COURSE_MIN_TOTAL_MINUTES
+  if (!longEnough) return null
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    name: args.name,
+    description: clampDescription(args.description, 200),
+    inLanguage: 'fa-IR',
+    url: args.url,
+    provider: {
+      '@id': SITE_URL + '/#organization',
+      '@type': 'Organization',
+      name: SITE_NAME,
+    },
+    // educationalLevel is open-ended; "Beginner" matches the typical
+    // audience for activation walk-throughs targeted at users buying
+    // their first international subscription from Iran.
+    educationalLevel: 'Beginner',
+    hasCourseInstance: {
+      '@type': 'CourseInstance',
+      courseMode: 'Online',
+      // courseWorkload follows ISO 8601, same as totalTime.
+      courseWorkload: args.totalTime || 'PT15M',
+      // Free, self-paced — the post is published openly on the blog.
+      offers: {
+        '@type': 'Offer',
+        price: 0,
+        priceCurrency: 'IRR',
+        category: 'Free',
+      },
+    },
   }
 }
 

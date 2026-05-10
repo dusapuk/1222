@@ -23,6 +23,7 @@ import {
   blogLd,
   breadcrumbLd,
   collectionPageLd,
+  courseLd,
   faqLd,
   howToLd,
   itemListLd,
@@ -678,6 +679,16 @@ export function seoForBlogPost(args: {
       steps: post.howToSteps,
     })
     if (ht) jsonLd.push(ht)
+    // Emit Course alongside HowTo for sufficiently-long tutorials
+    // (5+ steps OR totalTime >= 15 minutes). Roadmap C3.
+    const co = courseLd({
+      name: post.titleFa,
+      description: post.excerpt,
+      url: absoluteUrl(path),
+      totalTime: post.howToTotalTime ?? 'PT5M',
+      steps: post.howToSteps,
+    })
+    if (co) jsonLd.push(co)
   }
 
   // Prefer the per-post 1200×630 social card emitted by

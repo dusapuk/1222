@@ -72,11 +72,17 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
   const selectedPlan: Plan | null =
     servicePlans.find((p) => p.id === selectedPlanId) ?? cheapestPlan
 
+  // Surface up to 10 sibling services in the same vertical (was 4).
+  // Roadmap «Internal linking audit»: bumps the inbound-link footprint
+  // for every top-30 service card so PageRank flows more evenly across
+  // the catalogue. Capped at 10 because the rendered grid stays
+  // readable at 4 columns and we still want the link density that
+  // dicardo (665 anchors / home) demonstrates is winning.
   const related: Service[] = useMemo(() => {
     if (!service) return []
     return getServicesByCategory(service.categoryId)
       .filter((s) => s.id !== service.id)
-      .slice(0, 4)
+      .slice(0, 10)
   }, [service])
 
   // Internal-link block: surface every blog post that primarily covers

@@ -27,13 +27,17 @@ export function BlogPostPage({ slug, onNavigate }: BlogPostPageProps) {
   const primaryService = post ? getServiceBySlug(post.primaryServiceSlug) : undefined
   const primaryCategory = post ? getCategoryBySlug(post.primaryCategorySlug) : undefined
 
-  // Other posts in the same category for the related box.
+  // Other posts in the same category for the related box. Bumped from
+  // 3 → 6 (and the grid was extended to 3 columns × 2 rows on md+) so
+  // every post emits twice as many internal anchors. Roadmap
+  // «Internal linking audit»: matches dicardo's 665-anchor home so
+  // PageRank keeps flowing across the editorial surface.
   const related: BlogPost[] = useMemo(() => {
     if (!post) return []
     return getBlogPostsSorted()
       .filter((p) => p.slug !== post.slug)
       .filter((p) => p.primaryCategorySlug === post.primaryCategorySlug)
-      .slice(0, 3)
+      .slice(0, 6)
   }, [post])
 
   useSEO(post ? seoForBlogPost({ post, primaryService }) : seoForNotFound(`/blog/${slug}`))
