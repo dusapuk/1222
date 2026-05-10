@@ -27,10 +27,14 @@ import {
   howToLd,
   itemListLd,
   organizationLd,
+  personLd,
+  productGroupLd,
   productLd,
+  profilePageLd,
+  shouldEmitProductGroup,
   websiteLd,
 } from './jsonld'
-import type { StaticPage } from './staticPages'
+import type { AuthorPage, StaticPage } from './staticPages'
 import type { BlogPost } from './blog'
 import type { ServiceReview } from './reviews'
 import { getDiscountPct, getPlanDiscountPct } from './data'
@@ -246,6 +250,12 @@ export function seoForService(args: {
     }),
   )
 
+  // Streaming + music services with multiple plans get an extra
+  // `ProductGroup` block alongside the regular `Product`. The Product
+  // is then linked back via `isVariantOf` so Google understands the
+  // two entities describe the same listing (parent + variants).
+  const emitProductGroup = shouldEmitProductGroup(category, plans)
+
   const productJsonLd = productLd({
     service,
     category,
@@ -254,6 +264,7 @@ export function seoForService(args: {
     path,
     longDescription: detail?.descriptionFa,
     reviews,
+    hasProductGroup: emitProductGroup,
   })
 
   const jsonLd: Record<string, unknown>[] = [
@@ -266,6 +277,17 @@ export function seoForService(args: {
     ]),
     productJsonLd,
   ]
+
+  if (emitProductGroup) {
+    const groupLd = productGroupLd({
+      service,
+      category,
+      plans,
+      path,
+      longDescription: detail?.descriptionFa,
+    })
+    if (groupLd) jsonLd.push(groupLd)
+  }
 
   if (detail?.faq && detail.faq.length > 0) {
     const fp = faqLd(detail.faq)
@@ -386,6 +408,23 @@ export function seoForStaticPage(page: StaticPage): SEOConfig {
     path: page.path,
     imageAlt: `${page.titleFa} — پی‌کارت`,
     jsonLd,
+  }
+}
+
+export function seoForAuthorPage(author: AuthorPage): SEOConfig {
+  const description = clampDescription(author.bioFa, 200)
+  const breadcrumbs = breadcrumbLd([
+    { name: 'وبلاگ', path: '/blog' },
+    { name: author.nameFa, path: author.path },
+  ])
+  return {
+    title: `${author.nameFa}${author.roleFa ? ' — ' + author.roleFa : ''}`,
+    description,
+    path: author.path,
+    image: author.avatarUrl ?? '/images/og/og-default.png',
+    imageAlt: `${author.nameFa} — ${SITE_NAME}`,
+    ogType: 'profile',
+    jsonLd: [breadcrumbs, profilePageLd({ author }), personLd({ author })],
   }
 }
 

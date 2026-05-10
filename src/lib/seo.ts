@@ -152,6 +152,36 @@ export const ENAMAD_IFRAME_HTML = readEnv('VITE_ENAMAD_IFRAME_HTML')
 export const BLOG_AUTHOR_NAME = SITE_NAME + ' — تیم تحریریه'
 
 /**
+ * Public author profile slug. Used for `BlogPost.authorUrl` and the
+ * matching `/author/<slug>` static page rendered by `staticPages.ts`.
+ * Single-author for now — the helper functions below are written so
+ * additional editors can be added without changing the call-sites.
+ */
+export const PRIMARY_AUTHOR_SLUG = 'dusya'
+export const PRIMARY_AUTHOR_NAME = 'Dusya — دوسیا'
+export const PRIMARY_AUTHOR_URL = '/author/' + PRIMARY_AUTHOR_SLUG
+
+/**
+ * Optional public profiles surfaced as `Article.author.sameAs` to give
+ * Google a consistent identity to merge with the author's other
+ * appearances on the web (LinkedIn / X / GitHub / Telegram). Read from
+ * env so the operator can paste them into Vercel without touching code.
+ * Empty values are filtered out at call-time so we never emit empty
+ * URLs in JSON-LD.
+ */
+const AUTHOR_SAMEAS_ENV_VARS = [
+  'VITE_PIKART_AUTHOR_DUSYA_LINKEDIN',
+  'VITE_PIKART_AUTHOR_DUSYA_TWITTER',
+  'VITE_PIKART_AUTHOR_DUSYA_GITHUB',
+  'VITE_PIKART_AUTHOR_DUSYA_TELEGRAM',
+  'VITE_PIKART_AUTHOR_DUSYA_INSTAGRAM',
+] as const
+
+export function getPrimaryAuthorSameAs(): string[] {
+  return AUTHOR_SAMEAS_ENV_VARS.map((v) => readEnv(v)).filter((u) => u.length > 0)
+}
+
+/**
  * Local-business signals for Iran-specific E-E-A-T. Schema.org's
  * LocalBusiness extension to Organization, plus legacy geo metas
  * (`geo.region`, `geo.placename`, `geo.position`, `ICBM`) that older
