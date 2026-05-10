@@ -1,161 +1,250 @@
 /**
- * Long-form Persian content rendered at the bottom of the home page.
+ * Compact SEO copy rendered at the bottom of the home page.
  *
- * Pre-existing hero / featured / popular blocks contribute mostly UI
- * labels (~360 Persian words) — well below what the top Persian
- * marketplace competitors put on their landing pages
- * (dicardo ~3 100, license-market ~2 500, cafearz ~1 400). This block
- * adds ~3 000 additional Persian words, structured as:
- *   1. «چرا پی‌کارت؟» — 6 H3 sub-headings, each with 2 paragraphs.
- *   2. «۱۴ دسته‌بندی سرویس» — H3 per category linking to /c/<slug>.
- *   3. «سؤالات پرتکرار» — 10 Q&A `<details>` accordion (also emitted
- *      as FAQPage JSON-LD via `seoForHome`).
+ * Layout (top-down):
+ *   1. «پی‌کارت چیست؟» — a single ~100-word Persian paragraph that
+ *      anchors the brand entity + primary commercial keyword.
+ *   2. «چرا پی‌کارت؟» — 6 USP tiles (icon + 2-word label + 1-line
+ *      sub-label), mirroring the layout the top Persian competitor
+ *      numberland.ir uses on its winning landing.
+ *   3. «جدیدترین مقالات» — the 3 newest blog posts, each linking to
+ *      `/blog/<slug>`. Drives internal-link equity to the topical-
+ *      authority hub instead of dumping copy on the home page.
+ *   4. «سؤالات پرتکرار» — 10 Q&A `<details>` accordion, also emitted
+ *      as `FAQPage` JSON-LD via `seoForHome` to surface People-also-
+ *      ask snippets in the brand SERP.
  *
- * The whole block is server-rendered (it lives inside `HomePage`,
- * which is the entry rendered by the SSR step) so the prerendered
- * `dist/index.html` ships with the full text in the very first
- * payload — the single biggest gap vs. the competitor pool.
+ * The whole block is server-rendered (lives inside `HomePage`, which
+ * is the entry rendered by the SSR step) so the prerendered
+ * `dist/index.html` ships with the full structured copy in the very
+ * first payload — the requirement Google's Helpful Content / E-E-A-T
+ * updates reward, without the «wall of text» the legacy version
+ * shipped (~4 000 Persian words spread across 23 long blocks).
  */
-import { ChevronLeft } from 'lucide-react'
-import { AppLink } from './AppLink'
-import { categories, getCategoryServiceCount } from '../lib/data'
 import {
-  HOME_CATEGORY_HIGHLIGHTS,
-  HOME_FAQ,
-  HOME_WHY_PIKART_BLOCKS,
-} from '../lib/homeContent'
+  ChevronLeft,
+  Zap,
+  Shield,
+  CreditCard,
+  Globe,
+  Headphones,
+  RefreshCw,
+  Calendar,
+  ArrowLeft,
+} from 'lucide-react'
+import { AppLink } from './AppLink'
+import { HOME_FAQ } from '../lib/homeContent'
+import { getBlogPostsSorted } from '../lib/blog'
 import { toPersianDigits } from '../lib/format'
 
 export type HomeSeoSectionProps = {
   onNavigate: (path: string, params?: Record<string, string | number | null | undefined>) => void
 }
 
+const WHY_USP_TILES = [
+  {
+    icon: Zap,
+    title: 'تحویل آنی',
+    desc: 'دریافت در کمتر از ۳۰ ثانیه پس از پرداخت',
+    color: '#d4a853',
+  },
+  {
+    icon: Shield,
+    title: 'ضمانت اصالت',
+    desc: 'گارانتی ۷ روزه و جایگزینی رایگان',
+    color: '#2ec4b6',
+  },
+  {
+    icon: CreditCard,
+    title: 'پرداخت تومانی',
+    desc: 'درگاه شاپرک با کارت بانکی ایرانی',
+    color: '#06d6a0',
+  },
+  {
+    icon: Globe,
+    title: 'بدون VPN',
+    desc: 'سایت داخل ایران، بدون نیاز به تحریم‌شکن',
+    color: '#9b5de5',
+  },
+  {
+    icon: Headphones,
+    title: 'پشتیبانی ۲۴/۷',
+    desc: 'فارسی، انگلیسی و پشتو، شبانه‌روزی',
+    color: '#3b82f6',
+  },
+  {
+    icon: RefreshCw,
+    title: 'جایگزینی رایگان',
+    desc: 'تعویض ۲۴ ساعته یا بازگشت کامل وجه',
+    color: '#e63946',
+  },
+] as const
+
+function formatPersianDate(iso: string): string {
+  const [y, m, d] = iso.split('-')
+  if (!y || !m || !d) return iso
+  return `${toPersianDigits(d)}/${toPersianDigits(m)}/${toPersianDigits(y)}`
+}
+
 export function HomeSeoSection({ onNavigate }: HomeSeoSectionProps) {
-  // Order the highlights to match the live `categories` array so
-  // the visible link list matches the catalogue without hard-coding
-  // a parallel sort order. Categories without a copy entry fall
-  // back to the data.ts `description` field below.
-  const highlightBySlug = new Map(
-    HOME_CATEGORY_HIGHLIGHTS.map((h) => [h.slug, h] as const),
-  )
+  const latestPosts = getBlogPostsSorted().slice(0, 3)
 
   return (
     <section
       className="max-w-7xl mx-auto px-4 py-10"
       aria-labelledby="home-why-heading"
     >
+      {/* Intro + 6-tile USP grid */}
       <div className="rounded-2xl bg-[#13141a] border border-[#1e1f2a] p-6 md:p-10">
-        <header className="mb-6">
+        <header className="mb-6 max-w-3xl">
           <h2
             id="home-why-heading"
             className="text-2xl md:text-3xl font-black text-white mb-3"
           >
-            چرا پی‌کارت؟
+            پی‌کارت چیست؟
           </h2>
-          <p className="text-sm text-[#9a9baa] leading-7 max-w-3xl">
-            مارکت‌پلیس تخصصی خرید اشتراک سرویس‌های دیجیتال بین‌المللی برای
-            کاربران ایرانی — تحویل آنی، پرداخت تومانی و گارانتی واقعی روی هر
-            سفارش.
+          <p className="text-sm md:text-base text-[#c4c5d0] leading-8">
+            پی‌کارت یک مارکت‌پلیس فارسی‌زبان برای خرید اکانت پرمیوم سرویس‌های
+            بین‌المللی است؛ از{' '}
+            <AppLink
+              href="/c/ai-assistants"
+              onNavigate={onNavigate}
+              className="text-[#d4a853] hover:text-[#c49a48] no-underline"
+            >
+              ChatGPT Plus، Claude و Gemini
+            </AppLink>{' '}
+            تا{' '}
+            <AppLink
+              href="/c/streaming"
+              onNavigate={onNavigate}
+              className="text-[#d4a853] hover:text-[#c49a48] no-underline"
+            >
+              Spotify و Netflix
+            </AppLink>
+            ، Adobe، Canva و گیفت‌کارت. تحویل آنی، ضمانت اصالت، پرداخت تومانی
+            از طریق شاپرک، بدون نیاز به VPN — همه چیز در یک پنل کاربری فارسی.
           </p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {HOME_WHY_PIKART_BLOCKS.map((block) => (
-            <article
-              key={block.heading}
-              className="rounded-xl bg-[#0b0c10] border border-[#1e1f2a] p-5"
-            >
-              <h3 className="text-base font-bold text-[#d4a853] mb-2 leading-7">
-                {block.heading}
-              </h3>
-              {block.body.map((para, i) => (
-                <p
-                  key={i}
-                  className="text-sm text-[#c4c5d0] leading-8 mb-3 last:mb-0"
-                >
-                  {para}
-                </p>
-              ))}
-            </article>
-          ))}
-        </div>
-      </div>
-
-      <div
-        className="mt-8 rounded-2xl bg-[#13141a] border border-[#1e1f2a] p-6 md:p-10"
-        aria-labelledby="home-categories-heading"
-      >
-        <header className="mb-6 flex items-center justify-between gap-4">
-          <div>
-            <h2
-              id="home-categories-heading"
-              className="text-2xl md:text-3xl font-black text-white mb-2"
-            >
-              ۱۴ دسته‌بندی سرویس دیجیتال
-            </h2>
-            <p className="text-sm text-[#9a9baa] leading-7 max-w-3xl">
-              کاتالوگ پی‌کارت در ۱۴ دسته‌بندی تخصصی منتشر می‌شود تا انتخاب
-              سریع باشد. روی نام هر دسته بزنید تا سرویس‌های فعال،
-              مقایسه پلن‌ها و راهنمای فعال‌سازی فارسی را ببینید.
-            </p>
-          </div>
-          <AppLink
-            href="/categories"
-            onNavigate={onNavigate}
-            className="hidden md:flex items-center gap-1 text-sm text-[#d4a853] hover:text-[#c49a48] font-medium no-underline whitespace-nowrap"
-          >
-            همه دسته‌بندی‌ها
-            <ChevronLeft size={16} />
-          </AppLink>
-        </header>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {categories.map((category) => {
-            const highlight = highlightBySlug.get(category.slug)
-            const heading = highlight?.heading ?? category.titleFa
-            const description =
-              highlight?.description ??
-              category.description ??
-              `سرویس‌های فعال در دسته ${category.titleFa} با تحویل آنی، پرداخت تومانی و گارانتی اصالت در پی‌کارت.`
-            const count = getCategoryServiceCount(category.id)
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {WHY_USP_TILES.map((tile) => {
+            const I = tile.icon
             return (
-              <article
-                key={category.id}
-                className="rounded-xl bg-[#0b0c10] border border-[#1e1f2a] p-5 hover:border-[#d4a853]/30 transition-colors"
+              <div
+                key={tile.title}
+                className="relative overflow-hidden bg-[#0b0c10] border border-[#1e1f2a] rounded-xl p-4 flex items-start gap-3 transition-colors hover:border-[#2a2b35] group"
               >
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <h3 className="text-base font-bold text-white leading-7">
-                    <AppLink
-                      href={'/c/' + category.slug}
-                      onNavigate={onNavigate}
-                      className="text-white hover:text-[#d4a853] transition-colors no-underline"
-                    >
-                      {heading}
-                    </AppLink>
-                  </h3>
-                  {count > 0 && (
-                    <span className="shrink-0 text-[11px] font-bold text-[#d4a853] bg-[#d4a853]/10 border border-[#d4a853]/20 rounded-md px-2 py-0.5">
-                      {toPersianDigits(count)} سرویس
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-[#c4c5d0] leading-8 mb-3">
-                  {description}
-                </p>
-                <AppLink
-                  href={'/c/' + category.slug}
-                  onNavigate={onNavigate}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-[#d4a853] hover:text-[#c49a48] no-underline"
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -left-8 -bottom-8 h-24 w-24 rounded-full blur-2xl opacity-30 transition-opacity group-hover:opacity-50"
+                  style={{ background: tile.color }}
+                />
+                <div
+                  className="relative w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                  style={{
+                    background: `${tile.color}1f`,
+                    border: `1px solid ${tile.color}40`,
+                  }}
                 >
-                  مشاهده {heading}
-                  <ChevronLeft size={14} />
-                </AppLink>
-              </article>
+                  <I size={18} style={{ color: tile.color }} />
+                </div>
+                <div className="relative min-w-0">
+                  <div className="text-sm font-bold text-white mb-0.5">
+                    {tile.title}
+                  </div>
+                  <div className="text-[11px] text-[#8b8c98] leading-6">
+                    {tile.desc}
+                  </div>
+                </div>
+              </div>
             )
           })}
         </div>
       </div>
 
+      {/* Latest blog posts strip */}
+      {latestPosts.length > 0 && (
+        <div
+          className="mt-8 rounded-2xl bg-[#13141a] border border-[#1e1f2a] p-6 md:p-10"
+          aria-labelledby="home-latest-articles-heading"
+        >
+          <header className="mb-6 flex items-center justify-between gap-4">
+            <div>
+              <h2
+                id="home-latest-articles-heading"
+                className="text-2xl md:text-3xl font-black text-white mb-2"
+              >
+                جدیدترین مقالات
+              </h2>
+              <p className="text-sm text-[#9a9baa] leading-7 max-w-3xl">
+                راهنماهای فارسی خرید اشتراک‌های دیجیتال، فعال‌سازی،
+                قیمت تومانی و مقایسه پلن‌ها.
+              </p>
+            </div>
+            <AppLink
+              href="/blog"
+              onNavigate={onNavigate}
+              className="hidden md:flex items-center gap-1 text-sm text-[#d4a853] hover:text-[#c49a48] font-medium no-underline whitespace-nowrap"
+            >
+              همه مقالات
+              <ChevronLeft size={16} />
+            </AppLink>
+          </header>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {latestPosts.map((post) => (
+              <AppLink
+                key={post.slug}
+                href={`/blog/${post.slug}`}
+                onNavigate={onNavigate}
+                className="group bg-[#0b0c10] border border-[#1e1f2a] rounded-xl overflow-hidden hover:border-[#d4a853]/30 transition-colors no-underline text-inherit flex flex-col"
+                aria-label={post.titleFa}
+              >
+                <div className="relative aspect-[16/9] bg-[#0e0f15] overflow-hidden">
+                  <img
+                    src={post.coverImage}
+                    alt={post.coverAlt}
+                    width={1200}
+                    height={630}
+                    loading="lazy"
+                    decoding="async"
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <div className="p-4 flex flex-col flex-1">
+                  <div className="flex items-center gap-2 text-[11px] text-[#6b6c78] mb-2">
+                    <Calendar size={12} />
+                    <span>{formatPersianDate(post.datePublished)}</span>
+                  </div>
+                  <h3 className="text-sm md:text-base font-bold text-white leading-7 mb-2 group-hover:text-[#d4a853] transition-colors line-clamp-2">
+                    {post.titleFa}
+                  </h3>
+                  <p className="text-xs text-[#9a9baa] leading-7 flex-1 line-clamp-3">
+                    {post.excerpt}
+                  </p>
+                  <span className="mt-3 inline-flex items-center gap-1.5 text-xs text-[#d4a853] font-medium">
+                    مطالعه کامل
+                    <ArrowLeft size={12} />
+                  </span>
+                </div>
+              </AppLink>
+            ))}
+          </div>
+
+          <div className="mt-6 md:hidden">
+            <AppLink
+              href="/blog"
+              onNavigate={onNavigate}
+              className="inline-flex items-center gap-1 text-sm text-[#d4a853] hover:text-[#c49a48] font-medium no-underline"
+            >
+              همه مقالات
+              <ChevronLeft size={16} />
+            </AppLink>
+          </div>
+        </div>
+      )}
+
+      {/* FAQ */}
       <div
         className="mt-8 rounded-2xl bg-[#13141a] border border-[#1e1f2a] p-6 md:p-10"
         aria-labelledby="home-faq-heading"
