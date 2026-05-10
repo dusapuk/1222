@@ -162,6 +162,30 @@ export function initMarketplaceData(): Promise<void> {
 }
 
 const serviceDetailCache = new Map<string, Promise<ServiceDetail | null>>()
+const serviceDetailSyncCache = new Map<string, ServiceDetail | null>()
+
+/**
+ * Synchronously seed the per-service detail cache. Used by both:
+ *   - the Node prerender step (so `renderToString(<ServiceDetailPage />)`
+ *     emits the long description + FAQ in the static HTML), and
+ *   - the client bootstrap (reads the `<script id="__SERVICE_DETAIL__">`
+ *     payload that the prerender inlined, so hydration starts with the
+ *     same data and produces no mismatch).
+ */
+export function seedServiceDetail(slug: string, detail: ServiceDetail | null): void {
+  serviceDetailSyncCache.set(slug, detail)
+  if (detail !== null || !serviceDetailCache.has(slug)) {
+    serviceDetailCache.set(slug, Promise.resolve(detail))
+  }
+}
+
+/**
+ * Synchronous read of the seeded per-service detail. Returns `undefined`
+ * when nothing has been seeded yet (callers fall back to `loadServiceDetail`).
+ */
+export function getCachedServiceDetail(slug: string): ServiceDetail | null | undefined {
+  return serviceDetailSyncCache.get(slug)
+}
 
 /**
  * Fetch /data/services/<slug>.json. Cached forever — the file is static
@@ -171,6 +195,12 @@ const serviceDetailCache = new Map<string, Promise<ServiceDetail | null>>()
 export function loadServiceDetail(slug: string): Promise<ServiceDetail | null> {
   const cached = serviceDetailCache.get(slug)
   if (cached) return cached
+  if (typeof fetch === 'undefined') {
+    // Node SSR without an injected fetch: nothing to load.
+    const p = Promise.resolve<ServiceDetail | null>(null)
+    serviceDetailCache.set(slug, p)
+    return p
+  }
   const p = fetch(`/data/services/${encodeURIComponent(slug)}.json`)
     .then((r) => (r.ok ? (r.json() as Promise<ServiceDetail>) : null))
     .catch(() => null)

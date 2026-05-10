@@ -60,7 +60,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
               aria-hidden
               width={1280}
               height={720}
-              fetchPriority="high"
+              {...({ fetchpriority: 'high' } as Record<string, string>)}
               decoding="async"
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
             />

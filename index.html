@@ -51,13 +51,19 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <link
+      rel="search"
+      type="application/opensearchdescription+xml"
+      title="پی‌کارت"
+      href="/opensearch.xml"
+    />
 
     <link rel="alternate" hreflang="fa-IR" href="https://pikart.ir/" />
     <link rel="alternate" hreflang="x-default" href="https://pikart.ir/" />
 
     <!-- Preload the marketplace catalogue in parallel with the JS bundle so
          the React app can render as soon as both arrive. -->
-    <link rel="preload" as="fetch" type="application/json" href="/data/marketplace.json" />
+    <link rel="preload" as="fetch" type="application/json" href="/data/marketplace.json" crossorigin />
 
     <!--
       Self-hosted Vazirmatn (see src/index.css). We preload the two
@@ -101,6 +107,7 @@
     </script>
   </head>
   <body>
+    <!--ssr-outlet-start-->
     <div id="root">
       <div
         id="initial-loading"
@@ -130,6 +137,7 @@
         </div>
       </div>
     </div>
+    <!--ssr-outlet-end-->
     <style>
       @keyframes pikart-spin {
         from { transform: rotate(0deg); }

@@ -1,0 +1,19 @@
+/* pikart.ir — مارکت‌پلیس سرویس‌های دیجیتال */
+
+/* TEAM */
+  Founder: Pikart Team
+  Site: https://pikart.ir/
+  Contact: info@pikart.ir
+  Location: Iran
+
+/* THANKS */
+  Open-source community
+
+/* SITE */
+  Last update: 2026/05
+  Language: Persian (fa-IR)
+  Doctype: HTML5
+  IDE: Vite + React + TypeScript
+  Components: shadcn/ui, lucide-react
+  Styling: Tailwind CSS
+  Fonts: Vazirmatn (self-hosted)

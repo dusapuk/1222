@@ -6,9 +6,21 @@ export type Route = {
   params: URLSearchParams
 }
 
-function parseLocation(): Route {
+/** Strip trailing slashes — `/s/chatgpt/` and `/s/chatgpt` route the same. */
+function normalisePath(p: string | undefined | null): string {
+  if (!p || p === '/') return '/'
+  const stripped = p.replace(/\/+$/, '')
+  return stripped || '/'
+}
+
+function parseLocation(initial?: { path?: string; params?: Record<string, string> } | null): Route {
+  // Server-side / Node: use whatever the prerender script passed in.
   if (typeof window === 'undefined') {
-    return { path: '/', params: new URLSearchParams() }
+    const params = new URLSearchParams()
+    if (initial?.params) {
+      for (const [k, v] of Object.entries(initial.params)) params.set(k, v)
+    }
+    return { path: normalisePath(initial?.path), params }
   }
   const { pathname, search, hash } = window.location
 
@@ -16,11 +28,11 @@ function parseLocation(): Route {
   if ((!pathname || pathname === '/') && hash.startsWith('#/')) {
     const raw = hash.slice(1)
     const [hp, hq = ''] = raw.split('?')
-    return { path: hp || '/', params: new URLSearchParams(hq) }
+    return { path: normalisePath(hp), params: new URLSearchParams(hq) }
   }
 
   return {
-    path: pathname || '/',
+    path: normalisePath(pathname),
     params: new URLSearchParams(search.startsWith('?') ? search.slice(1) : search),
   }
 }
@@ -49,13 +61,18 @@ function buildHref(path: string, params?: URLSearchParams | Record<string, strin
  * Backward compat: if the user lands on the site via a legacy hash URL
  * (e.g. `https://pikart.ir/#/s/foo`) we transparently rewrite it to the
  * canonical `/s/foo` form via `history.replaceState` on first render.
+ *
+ * `initial` is consumed during the SSR pass so the server-rendered tree
+ * matches the route the prerender script targets (e.g. `/s/chatgpt`).
+ * Browser callers should leave it undefined — the hook reads
+ * `window.location` instead.
  */
-export function useRoute(): {
+export function useRoute(initial?: { path?: string; params?: Record<string, string> } | null): {
   route: Route
   navigate: (path: string, params?: Record<string, string | number | null | undefined>) => void
   setParams: (updates: Record<string, string | number | null | undefined>) => void
 } {
-  const [route, setRoute] = useState<Route>(() => parseLocation())
+  const [route, setRoute] = useState<Route>(() => parseLocation(initial))
 
   // One-shot: rewrite legacy `#/...` URLs to history-API URLs on first load.
   useEffect(() => {

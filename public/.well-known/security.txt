@@ -1,0 +1,10 @@
+# Security contact for pikart.ir — RFC 9116
+# See https://securitytxt.org/ for the spec.
+# When you set up PGP and a real expiration date, regenerate this file.
+
+Contact: mailto:security@pikart.ir
+Contact: https://pikart.ir/contact
+Preferred-Languages: fa, en
+Canonical: https://pikart.ir/.well-known/security.txt
+Policy: https://pikart.ir/security
+Expires: 2027-01-01T00:00:00.000Z
