@@ -235,6 +235,58 @@ export function clampDescription(input: string | null | undefined, max = 158): s
 }
 
 /**
+ * Strip HTML tags (and their inner `<style>`/`<script>` content) and
+ * collapse whitespace. Used to convert long marketing HTML stored in
+ * the CMS (`serviceDetail.descriptionFa`) into plain text for JSON-LD
+ * `Product.description` — Google explicitly disallows HTML in the
+ * `description` field and silently truncates anything longer than
+ * ~5 000 characters in the rich-result preview.
+ */
+export function stripHtml(input: string | null | undefined): string {
+  if (!input) return ''
+  return input
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * Soft cap for `Product.description` in JSON-LD. We keep marketing copy
+ * verbose (Google parses up to several KB for AI Overviews / featured
+ * snippets), but anything past 5 000 characters is silently dropped
+ * and bloats the prerendered HTML for no benefit.
+ */
+export const PRODUCT_DESCRIPTION_MAX = 5000
+
+/**
+ * Convert a Western-digit string (`"1404"`) to Persian digits
+ * (`"۱۴۰۴"`). Used for SERP-visible strings (titles, meta) where
+ * Persian numerals look more native and Google preserves them.
+ */
+export function toPersianDigits(input: string | number): string {
+  const s = String(input)
+  return s.replace(/[0-9]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)])
+}
+
+/**
+ * Current Jalali (Persian solar) year string used in title/meta
+ * templates as a freshness signal. Bump manually each Nowruz; the
+ * value is referenced in `seoForHome`, `seoForCategory`,
+ * `seoForService` and `seoForBlogPost`.
+ *
+ * Jalali year `۱۴۰۴` covers Gregorian Mar 21 2025 → Mar 20 2026.
+ */
+export const CURRENT_JALALI_YEAR = '۱۴۰۴'
+
+/**
  * Robots directive emitted on every indexable page. The `max-*-preview`
  * directives explicitly opt-in to large image previews and full snippets
  * in Google SERP — Google falls back to conservative defaults otherwise.

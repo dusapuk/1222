@@ -15,7 +15,8 @@
     "sitemap": "tsx scripts/generate-sitemap.ts",
     "rss": "tsx scripts/generate-rss.ts",
     "enrich": "tsx scripts/enrich-marketplace.ts",
-    "prerender": "tsx scripts/prerender.ts"
+    "prerender": "tsx scripts/prerender.ts",
+    "audit:product": "tsx scripts/audit-product-jsonld.ts"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
