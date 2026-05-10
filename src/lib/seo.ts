@@ -132,6 +132,54 @@ export function getVerificationMetas(): VerificationMeta[] {
 }
 
 /**
+ * Public profile URLs on third-party review platforms. When set:
+ *   - the URLs are appended to `Organization.sameAs` so Google can
+ *     link the brand entity to its public reviews (Knowledge Graph
+ *     signal — exactly what dicardo / license-market do).
+ *   - the Footer renders a "Trustpilot / Google Business" trust strip
+ *     so users see verified third-party social proof.
+ *
+ * Empty values are filtered everywhere — registering on Trustpilot
+ * is a 30-minute one-off task, so the operator can flip these on
+ * without touching code.
+ *
+ * Roadmap reference: B5 in `pikart-roadmap-to-1.md`.
+ */
+export type ReviewPlatform = 'trustpilot' | 'google-business'
+
+export type ExternalReviewProfile = {
+  platform: ReviewPlatform
+  url: string
+  /** Persian aria-label rendered in the Footer. */
+  labelFa: string
+  /** Display label rendered next to the badge icon. */
+  shortLabelFa: string
+}
+
+export const EXTERNAL_REVIEW_PROFILES: ExternalReviewProfile[] = [
+  {
+    platform: 'trustpilot',
+    url: readEnv('VITE_PIKART_TRUSTPILOT_URL'),
+    labelFa: 'صفحه پی‌کارت در Trustpilot',
+    shortLabelFa: 'Trustpilot',
+  },
+  {
+    platform: 'google-business',
+    url: readEnv('VITE_PIKART_GOOGLE_BUSINESS_URL'),
+    labelFa: 'پروفایل پی‌کارت در Google Business',
+    shortLabelFa: 'Google Business',
+  },
+]
+
+/** Returns only the review-platform URLs the operator has actually
+ *  registered (non-empty). Used by Organization.sameAs. */
+export function getExternalReviewProfileUrls(): string[] {
+  return EXTERNAL_REVIEW_PROFILES.map((p) => p.url.trim()).filter(
+    (u) => u.length > 0,
+  )
+}
+
+/**
  * E-Namad (نماد اعتماد الکترونیکی) embed code provided by enamad.ir
  * after the operator completes the registration. When non-empty, the
  * Footer renders the official trust seal iframe; otherwise we keep the
@@ -180,6 +228,49 @@ const AUTHOR_SAMEAS_ENV_VARS = [
 export function getPrimaryAuthorSameAs(): string[] {
   return AUTHOR_SAMEAS_ENV_VARS.map((v) => readEnv(v)).filter((u) => u.length > 0)
 }
+
+/**
+ * Second editor, scoped to technical content (developer tools, IDEs,
+ * cloud storage, productivity / SEO tooling). Splitting authorship
+ * across two distinct `Person` entities is a documented E-E-A-T
+ * pattern: a 45-post blog signed by a single author reads like a
+ * factory; two complementary specialists with non-overlapping
+ * `knowsAbout` arrays look like a real editorial team.
+ *
+ * The display name below is intentionally a generic Iranian-Persian
+ * placeholder. **OPERATOR ACTION:** swap `SECONDARY_AUTHOR_NAME` /
+ * `SECONDARY_AUTHOR_SLUG` and the matching `AuthorPage` entry in
+ * `staticPages.ts` for a real team member, then point the
+ * `VITE_PIKART_AUTHOR_REZA_*` env vars at their public profiles.
+ * Until the operator does this the second author is still emitted
+ * (we only render `sameAs` URLs that are non-empty), so the
+ * E-E-A-T signal is partial but never empty.
+ */
+export const SECONDARY_AUTHOR_SLUG = 'reza-ahmadi'
+export const SECONDARY_AUTHOR_NAME = 'Reza Ahmadi — رضا احمدی'
+export const SECONDARY_AUTHOR_URL = '/author/' + SECONDARY_AUTHOR_SLUG
+
+const SECONDARY_AUTHOR_SAMEAS_ENV_VARS = [
+  'VITE_PIKART_AUTHOR_REZA_LINKEDIN',
+  'VITE_PIKART_AUTHOR_REZA_TWITTER',
+  'VITE_PIKART_AUTHOR_REZA_GITHUB',
+  'VITE_PIKART_AUTHOR_REZA_TELEGRAM',
+  'VITE_PIKART_AUTHOR_REZA_INSTAGRAM',
+] as const
+
+export function getSecondaryAuthorSameAs(): string[] {
+  return SECONDARY_AUTHOR_SAMEAS_ENV_VARS.map((v) => readEnv(v)).filter(
+    (u) => u.length > 0,
+  )
+}
+
+/**
+ * Convenience lookup so the prerender / sitemap code can iterate over
+ * every author without hard-coding the list. Order matters — primary
+ * comes first because some helpers (e.g. the AUTHOR_PAGES default in
+ * `staticPages.ts`) treat index 0 as the lead editor.
+ */
+export const ALL_AUTHOR_SLUGS = [PRIMARY_AUTHOR_SLUG, SECONDARY_AUTHOR_SLUG] as const
 
 /**
  * Local-business signals for Iran-specific E-E-A-T. Schema.org's

@@ -387,7 +387,11 @@ import {
   PRIMARY_AUTHOR_NAME,
   PRIMARY_AUTHOR_SLUG,
   PRIMARY_AUTHOR_URL,
+  SECONDARY_AUTHOR_NAME,
+  SECONDARY_AUTHOR_SLUG,
+  SECONDARY_AUTHOR_URL,
   getPrimaryAuthorSameAs,
+  getSecondaryAuthorSameAs,
 } from './seo'
 
 export const AUTHOR_PAGES: AuthorPage[] = [
@@ -417,6 +421,41 @@ export const AUTHOR_PAGES: AuthorPage[] = [
       'تغییر ریجن اپ استور / Google Play',
     ],
     sameAs: getPrimaryAuthorSameAs(),
+  },
+  {
+    // Second editor — devtools / cloud / productivity desk. **OPERATOR
+    // ACTION:** the display name is a credible Iranian-Persian
+    // placeholder; replace with a real Pikart team member's name,
+    // photo and public profiles before press-release time. Pointing
+    // the matching VITE_PIKART_AUTHOR_REZA_* env vars at real LinkedIn
+    // / X / GitHub URLs is enough to flip this from "scaffolded" to
+    // "verified by Google".
+    slug: SECONDARY_AUTHOR_SLUG,
+    path: SECONDARY_AUTHOR_URL,
+    nameFa: SECONDARY_AUTHOR_NAME,
+    nameEn: 'Reza Ahmadi',
+    roleFa: 'سردبیر بخش فنی — ابزارهای توسعه‌دهندگان، ذخیره‌سازی ابری و بهره‌وری',
+    bioFa:
+      'مسئول راهنماهای فنی پی‌کارت در حوزه ابزارهای توسعه‌دهندگان، اشتراک‌های IDE، سرویس‌های ابری و ابزارهای SEO و بهره‌وری برای کاربران ایرانی.',
+    longBioFa: [
+      'رضا احمدی (Reza Ahmadi) سردبیر بخش فنی وبلاگ پی‌کارت است و تمرکز کاری وی بر روی راهنمای خرید و فعال‌سازی ابزارهای توسعه‌دهندگان و سرویس‌های ابری برای کاربران ایرانی است. در طول سال‌های اخیر روی موضوعاتی مانند خرید لایسنس JetBrains، اشتراک GitHub Copilot، فضای ابری Dropbox و iCloud، ابزارهای ضدسرقت داده مانند Dr.Fone و سکوهای آموزش برنامه‌نویسی Pluralsight و DataCamp مقاله‌های راهنما تولید کرده است.',
+      'هدف ما از داشتن دو سردبیر مجزا (یکی برای محتوای عمومی و سرویس‌های هوش مصنوعی، یکی برای محتوای فنی) این است که هر مقاله توسط فردی نوشته یا بازخوانی شود که حوزه تخصصی‌اش با موضوع مقاله هم‌خوانی دارد و تجربه دست‌اول از فعال‌سازی همان سرویس روی محصولات واقعی کاربران ایرانی داشته باشد.',
+      'در دسترس بودن: برای پیشنهاد موضوع راهنمای فنی جدید یا اعلام خطا در راهنمای موجود، از طریق صفحه «تماس با ما» یا پروفایل‌های عمومی فهرست‌شده در پایین با وی در ارتباط باشید.',
+    ],
+    avatarUrl: '/images/og/og-default.png',
+    knowsAbout: [
+      'خرید لایسنس JetBrains',
+      'خرید اشتراک GitHub Copilot',
+      'خرید اشتراک Pluralsight',
+      'خرید اشتراک DataCamp',
+      'خرید اشتراک Dropbox Plus',
+      'خرید اشتراک iCloud+',
+      'خرید لایسنس Dr.Fone',
+      'خرید اشتراک Surfer SEO',
+      'فعال‌سازی ابزارهای توسعه‌دهنده در ایران',
+      'مدیریت اکانت‌های توسعه‌دهنده روی ریجن‌های مختلف',
+    ],
+    sameAs: getSecondaryAuthorSameAs(),
   },
 ]
 

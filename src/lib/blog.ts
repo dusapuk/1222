@@ -22,7 +22,10 @@ import {
   BLOG_AUTHOR_NAME,
   PRIMARY_AUTHOR_NAME,
   PRIMARY_AUTHOR_URL,
+  SECONDARY_AUTHOR_NAME,
+  SECONDARY_AUTHOR_URL,
   getPrimaryAuthorSameAs,
+  getSecondaryAuthorSameAs,
 } from './seo'
 
 export type BlogParagraph = string
@@ -5703,6 +5706,36 @@ export const BLOG_POSTS: BlogPost[] = [
     howToTotalTime: 'PT5M',
   },
 ]
+
+// ---------------------------------------------------------------------------
+// Author re-assignment
+//
+// Posts whose primary category is one of the four «technical» verticals
+// below are signed by the secondary editor (`SECONDARY_AUTHOR_*`) so
+// the blog’s author distribution looks like an editorial team rather
+// than a single-author content farm. We mutate the array in place
+// (rather than threading the second author through every literal in
+// `BLOG_POSTS`) to keep the diff small — the `author` field is no
+// longer the source of truth for who wrote a given post; this block
+// is. Reassign here, never inside the literal entries.
+//
+// Roadmap reference: B4 in `pikart-roadmap-to-1.md` (E-E-A-T multi-
+// author signal). Numberland-style: distinct knowsAbout per author so
+// Google can model two related but non-identical Person entities.
+// ---------------------------------------------------------------------------
+const SECONDARY_AUTHOR_CATEGORIES = new Set<string>([
+  'developer-tools',
+  'cloud-storage',
+  'ai-writing-seo',
+  'productivity-work',
+])
+for (const post of BLOG_POSTS) {
+  if (SECONDARY_AUTHOR_CATEGORIES.has(post.primaryCategorySlug)) {
+    post.author = SECONDARY_AUTHOR_NAME
+    post.authorUrl = SECONDARY_AUTHOR_URL
+    post.authorSameAs = getSecondaryAuthorSameAs()
+  }
+}
 
 export const BLOG_SLUGS = BLOG_POSTS.map((p) => p.slug)
 

@@ -17,6 +17,7 @@
     "enrich": "tsx scripts/enrich-marketplace.ts",
     "prerender": "tsx scripts/prerender.ts",
     "audit:product": "tsx scripts/audit-product-jsonld.ts",
+    "audit:internal-links": "tsx scripts/audit-internal-links.ts",
     "og:images": "tsx scripts/generate-og-images.ts",
     "og:blog": "tsx scripts/generate-blog-og-images.ts"
   },

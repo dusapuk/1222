@@ -6,10 +6,16 @@ import {
   Shield,
   CreditCard,
   RotateCcw,
+  Star,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { categories } from '../lib/data'
-import { ENAMAD_IFRAME_HTML, SOCIAL_LINKS, type SocialNetwork } from '../lib/seo'
+import {
+  ENAMAD_IFRAME_HTML,
+  EXTERNAL_REVIEW_PROFILES,
+  SOCIAL_LINKS,
+  type SocialNetwork,
+} from '../lib/seo'
 import { AppLink } from './AppLink'
 
 const supportLinks: { label: string; path: string }[] = [
@@ -40,6 +46,13 @@ export type FooterProps = {
 export function Footer({ onNavigate }: FooterProps) {
   const visibleSocial = SOCIAL_LINKS.filter((s) => s.url.trim().length > 0)
   const enamadAvailable = ENAMAD_IFRAME_HTML.trim().length > 0
+  // Trustpilot / Google Business — registered review-platform profiles.
+  // Empty when the operator hasn't pasted the matching VITE env vars
+  // yet, in which case the trust-strip is hidden entirely (we never
+  // render a stub external badge). Roadmap B5.
+  const visibleReviewProfiles = EXTERNAL_REVIEW_PROFILES.filter(
+    (p) => p.url.trim().length > 0,
+  )
 
   return (
     <footer className="bg-[#0a0b0e] border-t border-[#1a1b26] mt-12">
@@ -180,6 +193,38 @@ export function Footer({ onNavigate }: FooterProps) {
                 // the raw HTML is the documented embed method.
                 dangerouslySetInnerHTML={{ __html: ENAMAD_IFRAME_HTML }}
               />
+            )}
+            {visibleReviewProfiles.length > 0 && (
+              <div className="mb-4">
+                <h4 className="font-bold text-sm text-white mb-3">
+                  نظرات تأیید‌شده درباره پی‌کارت
+                </h4>
+                <ul className="space-y-2">
+                  {visibleReviewProfiles.map((p) => (
+                    <li key={p.platform}>
+                      <a
+                        href={p.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={p.labelFa}
+                        className="flex items-center gap-3 bg-[#16171f] border border-[#1e1f2a] hover:border-[#d4a853]/40 rounded-xl px-3 py-2.5 transition-colors no-underline"
+                      >
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-[#d4a853]/10 border border-[#d4a853]/40">
+                          <Star size={16} className="text-[#d4a853]" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-bold text-white truncate">
+                            {p.shortLabelFa}
+                          </div>
+                          <div className="text-[10px] text-[#6b6c78] truncate">
+                            مشاهده نظرات واقعی کاربران
+                          </div>
+                        </div>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
             <h4 className="font-bold text-sm text-white mb-3">قوانین</h4>
             <ul className="space-y-2 text-xs text-[#6b6c78]">
