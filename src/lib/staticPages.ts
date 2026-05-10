@@ -24,6 +24,41 @@ export type StaticPageQA = {
   answer: string
 }
 
+/**
+ * Author landing page payload — the `/author/<slug>` route is rendered
+ * by `StaticPageView` (so we don't need a new page component) but is
+ * tracked separately so the sitemap, prerender step and JSON-LD all
+ * know the entity is a `Person`-style hub rather than a generic trust
+ * page. Author pages are referenced from every blog post's
+ * `Article.author.url`, so they're a key E-E-A-T surface.
+ */
+export type AuthorPage = {
+  /** URL slug used in /author/<slug>. */
+  slug: string
+  /** Full URL path (always /author/<slug>). */
+  path: string
+  /** Persian display name (author title). */
+  nameFa: string
+  /** Latin / English alias for og:title fallbacks. */
+  nameEn?: string
+  /** Short Persian role / job title («سردبیر»...). */
+  roleFa?: string
+  /** ~150-char Persian bio used for meta description + Person.description. */
+  bioFa: string
+  /** Persian-language full bio paragraphs (rendered as <p>). */
+  longBioFa?: string[]
+  /** Optional avatar/portrait path (site-relative). */
+  avatarUrl?: string
+  /**
+   * Names of services / topics the author specialises in. Surfaced as
+   * `Person.knowsAbout` in JSON-LD and as a list of «تخصص‌ها» under
+   * the bio in the rendered page.
+   */
+  knowsAbout?: string[]
+  /** Public profile URLs (LinkedIn / X / GitHub / Telegram / Instagram). */
+  sameAs?: string[]
+}
+
 export type StaticPageContact = {
   /** Persian-readable phone (e.g. "۰۲۱-۹۱۰۰۹۲۰۰"). */
   phoneFa: string
@@ -332,4 +367,61 @@ export const STATIC_PAGE_SLUGS = STATIC_PAGES.map((p) => p.slug)
 
 export function findStaticPage(slug: string): StaticPage | undefined {
   return STATIC_PAGES.find((p) => p.slug === slug)
+}
+
+// ---------------------------------------------------------------------------
+// Author landing pages
+// ---------------------------------------------------------------------------
+
+/**
+ * Editorial team. Today the blog is single-author (Dusya) so the array
+ * has one entry; the type is plural so additional editors can be
+ * added without changing call-sites in `App.tsx`,
+ * `scripts/generate-sitemap.ts`, `scripts/prerender.ts`, and
+ * `seoConfig.ts`. The `sameAs` URLs are read from env at module init
+ * via `getPrimaryAuthorSameAs()` (see `seo.ts`) so the operator can
+ * paste their LinkedIn / X / GitHub URLs into Vercel without
+ * modifying source.
+ */
+import {
+  PRIMARY_AUTHOR_NAME,
+  PRIMARY_AUTHOR_SLUG,
+  PRIMARY_AUTHOR_URL,
+  getPrimaryAuthorSameAs,
+} from './seo'
+
+export const AUTHOR_PAGES: AuthorPage[] = [
+  {
+    slug: PRIMARY_AUTHOR_SLUG,
+    path: PRIMARY_AUTHOR_URL,
+    nameFa: PRIMARY_AUTHOR_NAME,
+    nameEn: 'Dusya',
+    roleFa: 'سردبیر وبلاگ و تولیدکننده محتوای تخصصی سرویس‌های دیجیتال',
+    bioFa:
+      'سردبیر وبلاگ پی‌کارت با تمرکز بر راهنمای خرید اشتراک‌های دیجیتال بین‌المللی، سرویس‌های هوش مصنوعی و ترفند‌های فعال‌سازی برای کاربران ایرانی.',
+    longBioFa: [
+      'دوسیا (Dusya) سردبیر وبلاگ پی‌کارت است. وی بیش از چند سال تجربه در حوزه خرید و فعال‌سازی سرویس‌های دیجیتال بین‌المللی برای کاربران ایرانی دارد و تمرکز اصلی فعالیت‌اش بر تولید راهنماهای جامع خرید اشتراک ChatGPT Plus، Claude Pro، Midjourney، Spotify، Apple Music و ده‌ها سرویس دیجیتال دیگر است.',
+      'هر مقاله‌ای که در وبلاگ پی‌کارت منتشر می‌شود پیش از بارگذاری توسط وی بررسی و تحریر می‌شود تا داده‌های تازه (قیمت، سیاست‌های پرداخت، تعریفه پلن‌ها، راه‌های فعال‌سازی و تغییرات تحریم‌های بین‌المللی) به درستی بازتاب داده باشد.',
+      'در دسترس بودن: اگر درباره محتوای وبلاگ پیشنهاد، تصحیح یا درخواست تولید راهنما دارید، از طریق صفحه تماس پی‌کارت یا پروفایل‌های عمومی فهرست‌شده در پایین با وی در تماس باشید.',
+    ],
+    avatarUrl: '/images/og/og-default.png',
+    knowsAbout: [
+      'خرید اشتراک ChatGPT Plus',
+      'خرید Claude Pro',
+      'خرید Midjourney',
+      'خرید Spotify Premium',
+      'خرید Apple Music',
+      'خرید Adobe Creative Cloud',
+      'خرید Canva Pro',
+      'فعال‌سازی سرویس‌های بین‌المللی در ایران',
+      'تغییر ریجن اپ استور / Google Play',
+    ],
+    sameAs: getPrimaryAuthorSameAs(),
+  },
+]
+
+export const AUTHOR_PAGE_SLUGS = AUTHOR_PAGES.map((p) => p.slug)
+
+export function findAuthorPage(slug: string): AuthorPage | undefined {
+  return AUTHOR_PAGES.find((p) => p.slug === slug)
 }

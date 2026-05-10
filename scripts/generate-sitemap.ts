@@ -1,6 +1,24 @@
 // Build-time sitemap generator. Reads `public/data/marketplace.json` and emits
-// `public/sitemap.xml` listing every static route, every category page, and
-// every service detail page on the site.
+// a Sitemap **index** at `public/sitemap.xml` referencing five child sitemaps:
+//
+//   - `sitemap-pages.xml`       — home + categories index + blog index +
+//                                 trust pages (about/contact/privacy/...) +
+//                                 author landing pages (Sprint 2 №12)
+//   - `sitemap-categories.xml`  — every /c/<slug> page
+//   - `sitemap-services.xml`    — every /s/<slug> page (~1404 URLs)
+//   - `sitemap-blog.xml`        — blog index + every /blog/<slug> post
+//   - `sitemap-authors.xml`     — every /author/<slug> page
+//
+// Splitting buys Search Console two big wins:
+//   1. coverage stats are reported per type (services vs blog vs trust),
+//      so the operator can quickly tell which segment regressed.
+//   2. the index file stays under the 50 MB / 50 000-URL per-file limit
+//      even as the catalogue grows past today's ~1404 services.
+//
+// The previous monolithic `sitemap.xml` is preserved as the index file
+// itself (still served at `https://pikart.ir/sitemap.xml`) so we don't
+// invalidate any robots.txt references the operator has already
+// submitted to Search Console.
 //
 // Lastmod policy:
 //   - Static pages get the marketplace.json mtime as a coarse "last edited"
@@ -25,6 +43,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getBlogPostsSorted } from '../src/lib/blog'
+import { STATIC_PAGES, AUTHOR_PAGES } from '../src/lib/staticPages'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(__dirname, '..')
@@ -33,7 +52,7 @@ const SITE_URL = process.env.PIKART_SITE_URL?.replace(/\/$/, '') || 'https://pik
 const dataPath = resolve(repoRoot, 'public/data/marketplace.json')
 const servicesDir = resolve(repoRoot, 'public/data/services')
 const publicDir = resolve(repoRoot, 'public')
-const outPath = resolve(publicDir, 'sitemap.xml')
+const indexPath = resolve(publicDir, 'sitemap.xml')
 
 type Service = {
   slug: string
@@ -134,13 +153,32 @@ function url(loc: string, opts: UrlOpts = {}): string {
   return lines.join('\n')
 }
 
-const entries: string[] = []
+function urlset(entries: string[]): string {
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap-0.9"\n' +
+    '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n' +
+    entries.join('\n') +
+    '\n</urlset>\n'
+  )
+}
 
-// Static pages
-entries.push(
+function writeSitemap(filename: string, entries: string[]): { filename: string; count: number; mtime: string } {
+  const out = resolve(publicDir, filename)
+  mkdirSync(publicDir, { recursive: true })
+  writeFileSync(out, urlset(entries), 'utf8')
+  return { filename, count: entries.length, mtime: today }
+}
+
+// -------------------------------------------------------------------------
+// Child sitemap: pages (home, categories index, blog index, trust pages)
+// -------------------------------------------------------------------------
+
+const pagesEntries: string[] = []
+pagesEntries.push(
   url('/', { priority: '1.0', changefreq: 'daily', lastmod: marketplaceMtime }),
 )
-entries.push(
+pagesEntries.push(
   url('/categories', {
     priority: '0.9',
     changefreq: 'daily',
@@ -150,10 +188,11 @@ entries.push(
 
 // Trust / content pages — these are referenced from the footer of every
 // page so they should be discoverable directly from the sitemap too.
-const TRUST_PAGES = ['about', 'contact', 'privacy', 'terms', 'refund', 'faq', 'guide']
-for (const slug of TRUST_PAGES) {
-  entries.push(
-    url(`/${slug}`, {
+// Read from STATIC_PAGES so adding a new page in the source file
+// automatically extends the sitemap too.
+for (const page of STATIC_PAGES) {
+  pagesEntries.push(
+    url(page.path, {
       priority: '0.5',
       changefreq: 'monthly',
       lastmod: marketplaceMtime,
@@ -161,7 +200,11 @@ for (const slug of TRUST_PAGES) {
   )
 }
 
-// Category pages — embed the static category hero image as a sitemap image.
+// -------------------------------------------------------------------------
+// Child sitemap: categories
+// -------------------------------------------------------------------------
+
+const categoriesEntries: string[] = []
 const categoryImages: Record<string, string> = {
   'ai-assistants': '/images/categories/ai-assistants.jpg',
   'ai-image': '/images/categories/ai-image.jpg',
@@ -181,9 +224,9 @@ const categoryImages: Record<string, string> = {
 
 for (const c of data.categories ?? []) {
   if (!c.slug) continue
-  const latest = categoryLatestMtime.get(c.id)
+  const latest = categoryLatestMtime.get(c.id ?? '')
   const lastmod = latest != null ? dateOnly(latest) : marketplaceMtime
-  const images = []
+  const images: SitemapImage[] = []
   const hero = categoryImages[c.slug]
   if (hero) {
     images.push({
@@ -191,7 +234,7 @@ for (const c of data.categories ?? []) {
       title: c.titleFa ? `خرید ${c.titleFa}` : undefined,
     })
   }
-  entries.push(
+  categoriesEntries.push(
     url(`/c/${encodeURIComponent(c.slug)}`, {
       priority: '0.8',
       changefreq: 'daily',
@@ -201,19 +244,23 @@ for (const c of data.categories ?? []) {
   )
 }
 
-// Service pages — lastmod tracks the per-service JSON file when present.
+// -------------------------------------------------------------------------
+// Child sitemap: services
+// -------------------------------------------------------------------------
+
+const servicesEntries: string[] = []
 for (const s of data.services ?? []) {
   if (!s.slug) continue
   const detailPath = resolve(servicesDir, `${s.slug}.json`)
   const lastmod = safeMtime(detailPath, marketplaceMtime)
-  const images = []
+  const images: SitemapImage[] = []
   if (s.logoUrl) {
     images.push({
       loc: s.logoUrl,
       title: s.titleFa ? `خرید ${s.titleFa}` : undefined,
     })
   }
-  entries.push(
+  servicesEntries.push(
     url(`/s/${encodeURIComponent(s.slug)}`, {
       priority: '0.7',
       changefreq: 'weekly',
@@ -223,20 +270,24 @@ for (const s of data.services ?? []) {
   )
 }
 
-// Blog index + per-post URLs. Imported directly from `src/lib/blog.ts`
-// via tsx so the sitemap always matches the in-repo content store.
+// -------------------------------------------------------------------------
+// Child sitemap: blog
+// -------------------------------------------------------------------------
+
+const blogEntries: string[] = []
 const blogPosts = getBlogPostsSorted()
+let blogLastmod = today
 if (blogPosts.length > 0) {
-  const indexMtime =
+  blogLastmod =
     [...blogPosts.map((p) => p.dateModified || p.datePublished)]
       .filter(Boolean)
       .sort()
       .slice(-1)[0] || today
-  entries.push(
+  blogEntries.push(
     url('/blog', {
       priority: '0.8',
       changefreq: 'weekly',
-      lastmod: indexMtime,
+      lastmod: blogLastmod,
     }),
   )
   for (const post of blogPosts) {
@@ -249,7 +300,7 @@ if (blogPosts.length > 0) {
         caption: post.coverAlt,
       })
     }
-    entries.push(
+    blogEntries.push(
       url(`/blog/${encodeURIComponent(post.slug)}`, {
         priority: '0.7',
         changefreq: 'monthly',
@@ -260,19 +311,57 @@ if (blogPosts.length > 0) {
   }
 }
 
-const xml =
+// -------------------------------------------------------------------------
+// Child sitemap: authors
+// -------------------------------------------------------------------------
+
+const authorsEntries: string[] = []
+for (const author of AUTHOR_PAGES) {
+  const lastmod = blogLastmod || marketplaceMtime
+  authorsEntries.push(
+    url(author.path, {
+      priority: '0.5',
+      changefreq: 'monthly',
+      lastmod,
+    }),
+  )
+}
+
+// -------------------------------------------------------------------------
+// Write child sitemaps + the index
+// -------------------------------------------------------------------------
+
+const written: { filename: string; count: number; mtime: string }[] = []
+written.push(writeSitemap('sitemap-pages.xml', pagesEntries))
+written.push(writeSitemap('sitemap-categories.xml', categoriesEntries))
+written.push(writeSitemap('sitemap-services.xml', servicesEntries))
+written.push(writeSitemap('sitemap-blog.xml', blogEntries))
+// Authors sitemap is intentionally written even when empty so we don't
+// have to special-case the index — empty <urlset> is valid per
+// sitemaps.org spec and Search Console accepts it.
+written.push(writeSitemap('sitemap-authors.xml', authorsEntries))
+
+const indexBody = written
+  .map(
+    ({ filename, mtime }) =>
+      '  <sitemap>\n' +
+      `    <loc>${escapeXml(SITE_URL + '/' + filename)}</loc>\n` +
+      `    <lastmod>${mtime}</lastmod>\n` +
+      '  </sitemap>',
+  )
+  .join('\n')
+
+const indexXml =
   '<?xml version="1.0" encoding="UTF-8"?>\n' +
-  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap-0.9"\n' +
-  '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n' +
-  entries.join('\n') +
-  '\n</urlset>\n'
+  '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap-0.9">\n' +
+  indexBody +
+  '\n</sitemapindex>\n'
 
 mkdirSync(publicDir, { recursive: true })
-writeFileSync(outPath, xml, 'utf8')
+writeFileSync(indexPath, indexXml, 'utf8')
 
-const totalUrls = entries.length
-const cats = data.categories?.length ?? 0
-const svcs = data.services?.length ?? 0
+const totalUrls = written.reduce((acc, w) => acc + w.count, 0)
+const summary = written.map((w) => `${w.filename} (${w.count})`).join(', ')
 console.log(
-  `[sitemap] wrote ${outPath} — ${totalUrls} URLs (${cats} categories, ${svcs} services, ${blogPosts.length} blog posts)`,
+  `[sitemap] wrote ${indexPath} sitemap index referencing ${written.length} files — ${summary} — ${totalUrls} URLs total`,
 )

@@ -18,7 +18,12 @@
  * they appear in `BLOG_POSTS` (newest first).
  */
 
-import { BLOG_AUTHOR_NAME } from './seo'
+import {
+  BLOG_AUTHOR_NAME,
+  PRIMARY_AUTHOR_NAME,
+  PRIMARY_AUTHOR_URL,
+  getPrimaryAuthorSameAs,
+} from './seo'
 
 export type BlogParagraph = string
 
@@ -121,6 +126,24 @@ export type BlogPost = {
 const PUBLISHED = '2026-05-01'
 const MODIFIED = '2026-05-10'
 
+/**
+ * Default author identity attached to every post in this file. We name
+ * a real `Person` (`Dusya`) instead of the brand so `Article.author`
+ * resolves to a Person node with `url` + `sameAs` — a strong E-E-A-T
+ * signal that ties the post to a verifiable identity rather than the
+ * generic editorial team. Posts that genuinely have a different author
+ * can still override `author`/`authorUrl`/`authorSameAs` per entry.
+ */
+const DEFAULT_AUTHOR_NAME = PRIMARY_AUTHOR_NAME
+const DEFAULT_AUTHOR_URL = PRIMARY_AUTHOR_URL
+function defaultAuthorSameAs(): string[] {
+  return getPrimaryAuthorSameAs()
+}
+
+// Suppress unused-import warning when no post explicitly references
+// the legacy brand-only author (kept exported for backwards-compat).
+void BLOG_AUTHOR_NAME
+
 export const BLOG_POSTS: BlogPost[] = [
   {
     slug: 'buy-chatgpt-plus-iran',
@@ -137,7 +160,9 @@ export const BLOG_POSTS: BlogPost[] = [
       'اشتراک GPT-4',
       'خرید اکانت Open AI',
     ],
-    author: BLOG_AUTHOR_NAME,
+    author: DEFAULT_AUTHOR_NAME,
+    authorUrl: DEFAULT_AUTHOR_URL,
+    authorSameAs: defaultAuthorSameAs(),
     datePublished: PUBLISHED,
     dateModified: MODIFIED,
     primaryServiceSlug: 'chatgpt',
@@ -230,7 +255,9 @@ export const BLOG_POSTS: BlogPost[] = [
       'پلن Midjourney',
       'هوش مصنوعی تولید عکس',
     ],
-    author: BLOG_AUTHOR_NAME,
+    author: DEFAULT_AUTHOR_NAME,
+    authorUrl: DEFAULT_AUTHOR_URL,
+    authorSameAs: defaultAuthorSameAs(),
     datePublished: PUBLISHED,
     dateModified: MODIFIED,
     primaryServiceSlug: 'midjourney',
@@ -318,7 +345,9 @@ export const BLOG_POSTS: BlogPost[] = [
       'Anthropic Claude خرید',
       'هوش مصنوعی متنی',
     ],
-    author: BLOG_AUTHOR_NAME,
+    author: DEFAULT_AUTHOR_NAME,
+    authorUrl: DEFAULT_AUTHOR_URL,
+    authorSameAs: defaultAuthorSameAs(),
     datePublished: PUBLISHED,
     dateModified: MODIFIED,
     primaryServiceSlug: 'claude',
@@ -406,7 +435,9 @@ export const BLOG_POSTS: BlogPost[] = [
       'اشتراک طراحی',
       'خرید کانوا قانونی',
     ],
-    author: BLOG_AUTHOR_NAME,
+    author: DEFAULT_AUTHOR_NAME,
+    authorUrl: DEFAULT_AUTHOR_URL,
+    authorSameAs: defaultAuthorSameAs(),
     datePublished: PUBLISHED,
     dateModified: MODIFIED,
     primaryServiceSlug: 'canva',
@@ -499,7 +530,9 @@ export const BLOG_POSTS: BlogPost[] = [
       'Premiere Pro ایران',
       'Adobe All Apps',
     ],
-    author: BLOG_AUTHOR_NAME,
+    author: DEFAULT_AUTHOR_NAME,
+    authorUrl: DEFAULT_AUTHOR_URL,
+    authorSameAs: defaultAuthorSameAs(),
     datePublished: PUBLISHED,
     dateModified: MODIFIED,
     primaryServiceSlug: 'adobe-creative',
@@ -588,7 +621,9 @@ export const BLOG_POSTS: BlogPost[] = [
       'پلن خانوادگی Apple Music',
       'اشتراک موسیقی',
     ],
-    author: BLOG_AUTHOR_NAME,
+    author: DEFAULT_AUTHOR_NAME,
+    authorUrl: DEFAULT_AUTHOR_URL,
+    authorSameAs: defaultAuthorSameAs(),
     datePublished: PUBLISHED,
     dateModified: MODIFIED,
     primaryServiceSlug: 'apple-music',
@@ -675,7 +710,9 @@ export const BLOG_POSTS: BlogPost[] = [
       'اشتراک یادگیری زبان',
       'خرید دولینگو ایران',
     ],
-    author: BLOG_AUTHOR_NAME,
+    author: DEFAULT_AUTHOR_NAME,
+    authorUrl: DEFAULT_AUTHOR_URL,
+    authorSameAs: defaultAuthorSameAs(),
     datePublished: PUBLISHED,
     dateModified: MODIFIED,
     primaryServiceSlug: 'duolingo',
@@ -762,7 +799,9 @@ export const BLOG_POSTS: BlogPost[] = [
       'اشتراک LinkedIn Sales Navigator',
       'LinkedIn ایران',
     ],
-    author: BLOG_AUTHOR_NAME,
+    author: DEFAULT_AUTHOR_NAME,
+    authorUrl: DEFAULT_AUTHOR_URL,
+    authorSameAs: defaultAuthorSameAs(),
     datePublished: PUBLISHED,
     dateModified: MODIFIED,
     primaryServiceSlug: 'linkedin',
@@ -849,7 +888,9 @@ export const BLOG_POSTS: BlogPost[] = [
       'Dropbox 2TB',
       'خرید استوریج Dropbox',
     ],
-    author: BLOG_AUTHOR_NAME,
+    author: DEFAULT_AUTHOR_NAME,
+    authorUrl: DEFAULT_AUTHOR_URL,
+    authorSameAs: defaultAuthorSameAs(),
     datePublished: PUBLISHED,
     dateModified: MODIFIED,
     primaryServiceSlug: 'dropbox',
@@ -936,7 +977,9 @@ export const BLOG_POSTS: BlogPost[] = [
       'گوگل بارد پرمیوم',
       'هوش مصنوعی گوگل',
     ],
-    author: BLOG_AUTHOR_NAME,
+    author: DEFAULT_AUTHOR_NAME,
+    authorUrl: DEFAULT_AUTHOR_URL,
+    authorSameAs: defaultAuthorSameAs(),
     datePublished: PUBLISHED,
     dateModified: MODIFIED,
     primaryServiceSlug: 'gemini',
@@ -1025,4 +1068,42 @@ export function findBlogPost(slug: string): BlogPost | undefined {
 /** Sort newest first by `datePublished` for the index. */
 export function getBlogPostsSorted(): BlogPost[] {
   return [...BLOG_POSTS].sort((a, b) => b.datePublished.localeCompare(a.datePublished))
+}
+
+/**
+ * Find blog posts that mention the given service slug — either as the
+ * primary subject (`primaryServiceSlug`) or as a related entry. Used
+ * by `ServiceDetailPage` to surface a «مقالات مرتبط» section on every
+ * service page that has matching coverage in the blog. Posts are
+ * deduplicated and returned sorted newest-first; pass `limit` to cap
+ * the result count.
+ */
+export function getRelatedBlogPostsForService(
+  slug: string,
+  limit?: number,
+): BlogPost[] {
+  if (!slug) return []
+  const seen = new Set<string>()
+  const results: BlogPost[] = []
+  // Pass 1: posts where this slug is the primary subject — strongest
+  // semantic match, surface them first.
+  for (const post of getBlogPostsSorted()) {
+    if (post.primaryServiceSlug === slug && !seen.has(post.slug)) {
+      seen.add(post.slug)
+      results.push(post)
+    }
+  }
+  // Pass 2: posts where this slug appears in `relatedServiceSlugs`.
+  for (const post of getBlogPostsSorted()) {
+    if (
+      post.relatedServiceSlugs &&
+      post.relatedServiceSlugs.includes(slug) &&
+      !seen.has(post.slug)
+    ) {
+      seen.add(post.slug)
+      results.push(post)
+    }
+  }
+  if (limit != null && limit >= 0) return results.slice(0, limit)
+  return results
 }

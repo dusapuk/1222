@@ -31,6 +31,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import {
+  seoForAuthorPage,
   seoForBlogIndex,
   seoForBlogPost,
   seoForCategoriesIndex,
@@ -40,7 +41,7 @@ import {
   seoForService,
   seoForStaticPage,
 } from '../src/lib/seoConfig'
-import { STATIC_PAGES } from '../src/lib/staticPages'
+import { AUTHOR_PAGES, STATIC_PAGES } from '../src/lib/staticPages'
 import {
   DEFAULT_DESCRIPTION,
   DEFAULT_OG_IMAGE,
@@ -277,6 +278,14 @@ for (const page of STATIC_PAGES) {
     path: page.path,
     outFile: fileFor(page.path),
     seo: seoForStaticPage(page),
+  })
+}
+
+for (const author of AUTHOR_PAGES) {
+  routes.push({
+    path: author.path,
+    outFile: fileFor(author.path),
+    seo: seoForAuthorPage(author),
   })
 }
 

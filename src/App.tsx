@@ -12,8 +12,9 @@ import { NotFoundPage } from './pages/NotFoundPage'
 import { StaticPageView } from './pages/StaticPage'
 import { BlogIndexPage } from './pages/BlogIndexPage'
 import { BlogPostPage } from './pages/BlogPostPage'
+import { AuthorPageView } from './pages/AuthorPage'
 import type { SortKey } from './lib/data'
-import { findStaticPage } from './lib/staticPages'
+import { findAuthorPage, findStaticPage } from './lib/staticPages'
 
 function parseSort(value: string | null): SortKey {
   switch (value) {
@@ -98,6 +99,12 @@ function App({ initialPath, initialParams }: AppProps = {}) {
     if (path.startsWith('/blog/')) {
       const slug = decodeURIComponent(path.slice(6).replace(/\/$/, ''))
       return <BlogPostPage slug={slug} onNavigate={navigate} />
+    }
+
+    if (path.startsWith('/author/')) {
+      const slug = decodeURIComponent(path.slice(8).replace(/\/$/, ''))
+      const author = findAuthorPage(slug)
+      if (author) return <AuthorPageView author={author} onNavigate={navigate} />
     }
 
     if (path === '/search') {

@@ -27,6 +27,8 @@ import {
 import type { Category, Plan, Service } from './data'
 import type { ServiceReview } from './reviews'
 import type { BlogPost } from './blog'
+import type { AuthorPage } from './staticPages'
+import { getServiceRegions, type RegionRef } from './regions'
 
 /**
  * Hard-cap validity for short-lived offers. Schema.org Offer prefers a
@@ -190,8 +192,16 @@ export function productLd(args: {
    * guidelines and risks a manual penalty.
    */
   reviews?: ServiceReview[] | null
+  /**
+   * When true, this Product is the parent of a ProductGroup emitted as
+   * a sibling JSON-LD block. We add `isVariantOf` so Google can match
+   * the two entities. The flag is computed by
+   * `shouldEmitProductGroup(category, plans)`.
+   */
+  hasProductGroup?: boolean
 }): Json {
-  const { service, category, plans, cheapest, path, longDescription, reviews } = args
+  const { service, category, plans, cheapest, path, longDescription, reviews, hasProductGroup } =
+    args
   const url = absoluteUrl(path)
 
   // `Product.description` is the field Google extracts for AI Overviews
@@ -214,7 +224,8 @@ export function productLd(args: {
     )
   }
 
-  const offers = buildOffers({ service, plans, cheapest, url })
+  const regions = getServiceRegions({ service, category })
+  const offers = buildOffers({ service, category, plans, cheapest, url, regions })
 
   const product: Json = {
     '@context': 'https://schema.org',
@@ -237,13 +248,23 @@ export function productLd(args: {
     product.image = absoluteUrl(service.logoUrl)
   }
   if (offers) product.offers = offers
+  if (hasProductGroup) {
+    product.isVariantOf = { '@id': url + '#productgroup' }
+  }
 
   // E-E-A-T signal: tell Google explicitly which audience we serve.
   // Mirrors the org-level `areaServed` so single-product pages stand on
-  // their own without inheriting the Organization payload.
+  // their own without inheriting the Organization payload. When a
+  // service genuinely serves multiple countries (streaming/music to
+  // Persian-speakers in Turkey/UAE/Afghanistan, AI assistants to
+  // Tajik/Iraqi/Afghan students), we surface the full list so Google's
+  // «Available in your country» badge fires for those visitors too.
   product.audience = {
     '@type': 'PeopleAudience',
-    geographicArea: { '@type': 'Country', name: 'Iran', identifier: 'IR' },
+    geographicArea:
+      regions.length === 1
+        ? regionToCountryNode(regions[0])
+        : regions.map(regionToCountryNode),
   }
 
   // SpeakableSpecification — hints to Google Assistant / voice search
@@ -307,13 +328,29 @@ function buildReviewBlocks(reviews: ServiceReview[]):
   return { aggregateRating, reviews: reviewLd }
 }
 
+function regionToCountryNode(region: RegionRef): Json {
+  return {
+    '@type': 'Country',
+    name: region.nameEn,
+    identifier: region.code,
+  }
+}
+
+function buildEligibleRegion(regions: RegionRef[]): Json | Json[] {
+  if (regions.length === 1) return regionToCountryNode(regions[0])
+  return regions.map(regionToCountryNode)
+}
+
 function buildOffers(args: {
   service: Service
+  category?: Category
   plans: Plan[]
   cheapest: Plan | null
   url: string
+  /** Optional pre-resolved regions — lets callers reuse the list. */
+  regions?: RegionRef[]
 }): Json | null {
-  const { service, plans, cheapest, url } = args
+  const { service, category, plans, cheapest, url } = args
   const priced = plans.filter((p) => p.priceIrt != null && p.isActive)
   const availability = service.inStock
     ? 'https://schema.org/InStock'
@@ -326,11 +363,8 @@ function buildOffers(args: {
   // eligibility for digital products.
   const seller: Json = { '@id': SITE_URL + '/#organization' }
   const priceValidUntil = defaultPriceValidUntil()
-  const eligibleRegion: Json = {
-    '@type': 'Country',
-    name: 'Iran',
-    identifier: 'IR',
-  }
+  const regions = args.regions ?? getServiceRegions({ service, category })
+  const eligibleRegion = buildEligibleRegion(regions)
   const hasMerchantReturnPolicy: Json = {
     '@type': 'MerchantReturnPolicy',
     applicableCountry: 'IR',
@@ -482,6 +516,254 @@ export function faqLd(items: FaqItem[]): Json | null {
       },
     })),
   }
+}
+
+/**
+ * `Person` payload for an editorial author. Used both inline inside
+ * `Article.author` (referenced by `@id`) and as the top-level entity
+ * on `/author/<slug>` pages. The `mainEntityOfPage` field pins the
+ * Person to its public profile URL so Google can match it across
+ * articles.
+ */
+export function personLd(args: { author: AuthorPage }): Json {
+  const { author } = args
+  const url = absoluteUrl(author.path)
+  const person: Json = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    '@id': url + '#person',
+    name: author.nameFa,
+    url,
+    mainEntityOfPage: url,
+  }
+  if (author.nameEn) person.alternateName = author.nameEn
+  if (author.roleFa) person.jobTitle = author.roleFa
+  if (author.bioFa) person.description = clampDescription(author.bioFa, 320)
+  if (author.avatarUrl) person.image = absoluteUrl(author.avatarUrl)
+  if (author.knowsAbout && author.knowsAbout.length > 0) {
+    person.knowsAbout = author.knowsAbout
+  }
+  const sameAs = (author.sameAs ?? []).map((s) => s.trim()).filter(Boolean)
+  if (sameAs.length > 0) person.sameAs = sameAs
+  person.worksFor = { '@id': SITE_URL + '/#organization' }
+  return person
+}
+
+/**
+ * `ProfilePage` payload that wraps an author landing page. Google's
+ * Profile Page rich result picks up `mainEntity` of type Person and
+ * uses it for the «پروفایل نویسنده» SERP card.
+ */
+export function profilePageLd(args: { author: AuthorPage }): Json {
+  const { author } = args
+  const url = absoluteUrl(author.path)
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    '@id': url + '#profilepage',
+    url,
+    name: author.nameFa,
+    description: author.bioFa,
+    inLanguage: 'fa-IR',
+    mainEntity: { '@id': url + '#person' },
+    isPartOf: { '@id': SITE_URL + '/#website' },
+  }
+}
+
+/**
+ * Categories whose plans behave like product variants (different
+ * durations, regions, or account tiers of the same underlying
+ * subscription). For services in these categories with 2+ active
+ * priced plans we additionally emit a `ProductGroup` JSON-LD block so
+ * Google can render the variant rich-result (per-row pricing in SERP)
+ * on top of the existing `Product` snippet.
+ *
+ * Streaming + music are the obvious wins (Netflix «1 месяц / 3 месяца /
+ * 1 год», Spotify Family vs Individual, etc). Other categories' plans
+ * are often less variant-shaped (e.g. one-off licences) so we keep
+ * scope tight per the SEO roadmap recommendation.
+ */
+export const PRODUCT_GROUP_CATEGORY_SLUGS: ReadonlySet<string> = new Set([
+  'streaming',
+  'music',
+])
+
+export function shouldEmitProductGroup(
+  category: Category | undefined,
+  plans: Plan[],
+): boolean {
+  if (!category) return false
+  if (!PRODUCT_GROUP_CATEGORY_SLUGS.has(category.slug)) return false
+  const active = plans.filter((p) => p.isActive && p.priceIrt != null)
+  return active.length >= 2
+}
+
+/**
+ * Map a plan's `durationDays` to a Persian human-readable variant
+ * label («1 месяц», «салане»...). Returns null when the duration is
+ * undefined / non-positive so we can omit the duration field rather
+ * than emit «0 роз» in JSON-LD.
+ */
+function planDurationLabelFa(plan: Plan): string | null {
+  const days = plan.durationDays ?? null
+  if (!days || days <= 0) return null
+  if (days >= 350) {
+    const years = Math.max(1, Math.round(days / 365))
+    return years === 1 ? '۱ سال' : `${years} سال`
+  }
+  if (days >= 27 && days <= 92) {
+    const months = Math.max(1, Math.round(days / 30))
+    return months === 1 ? '۱ ماه' : `${months} ماه`
+  }
+  if (days < 27) {
+    return `${days} روز`
+  }
+  const months = Math.max(1, Math.round(days / 30))
+  return `${months} ماه`
+}
+
+/**
+ * `ProductGroup` payload for services whose plans are variants of the
+ * same underlying subscription (different durations / regions /
+ * account tiers). Emits one `Product` per active priced plan inside
+ * `hasVariant`, each with its own SKU + Offer so Google's variant
+ * rich-result can show per-row pricing.
+ *
+ * Returns null when the service has fewer than 2 active priced plans
+ * — ProductGroup with a single variant is meaningless and Google
+ * silently downgrades it to a regular Product anyway.
+ */
+export function productGroupLd(args: {
+  service: Service
+  category?: Category
+  plans: Plan[]
+  path: string
+  longDescription?: string | null
+}): Json | null {
+  const { service, category, plans, path, longDescription } = args
+  const active = plans
+    .filter((p) => p.isActive && p.priceIrt != null)
+    .sort((a, b) => (a.priceIrt ?? 0) - (b.priceIrt ?? 0))
+  if (active.length < 2) return null
+
+  const url = absoluteUrl(path)
+  const groupId = url + '#productgroup'
+
+  // variesBy hints which axes the variants disagree on. Schema.org
+  // prefers full property URIs but accepts short Persian/English
+  // tokens too. We collapse to a small whitelist («duration» /
+  // «region» / «accountType») so Google can group rows in the variant
+  // rich-result.
+  const variesBy: string[] = []
+  const distinctDurations = new Set(
+    active.map((p) => p.durationDays).filter((d): d is number => d != null && d > 0),
+  )
+  const distinctRegions = new Set(
+    active.map((p) => p.region).filter((r): r is string => Boolean(r && r.trim())),
+  )
+  const distinctAccountTypes = new Set(
+    active.map((p) => p.accountType).filter((r): r is string => Boolean(r && r.trim())),
+  )
+  if (distinctDurations.size > 1) variesBy.push('https://schema.org/duration')
+  if (distinctRegions.size > 1) variesBy.push('https://schema.org/availableAtOrFrom')
+  if (distinctAccountTypes.size > 1) variesBy.push('accountType')
+
+  // Description: reuse the long-marketing copy the parent Product uses
+  // so SERP variant rows inherit the same blurb. Capped harder here
+  // than on the parent Product (300 chars) because Google only uses
+  // the variant description when the user expands a row.
+  const longText = stripHtml(longDescription)
+  const description = clampDescription(
+    longText ||
+      service.shortDescriptionFa ||
+      `خرید ${service.titleFa}${category ? ' در دسته ' + category.titleFa : ''} با تحویل سریع و پشتیبانی فارسی.`,
+    300,
+  )
+
+  const group: Json = {
+    '@context': 'https://schema.org',
+    '@type': 'ProductGroup',
+    '@id': groupId,
+    name: service.titleFa,
+    description,
+    url,
+    productGroupID: service.id,
+    inLanguage: 'fa-IR',
+    brand: {
+      '@type': 'Brand',
+      name: service.titleEn || service.titleFa,
+    },
+  }
+  if (service.titleEn) group.alternateName = service.titleEn
+  if (service.logoUrl) group.image = absoluteUrl(service.logoUrl)
+  if (category) group.category = category.titleFa
+  if (variesBy.length > 0) group.variesBy = variesBy
+
+  const availability = service.inStock
+    ? 'https://schema.org/InStock'
+    : 'https://schema.org/OutOfStock'
+  const seller: Json = { '@id': SITE_URL + '/#organization' }
+  const variantRegions = getServiceRegions({ service, category })
+  const variantEligibleRegion = buildEligibleRegion(variantRegions)
+
+  // Cap variants at 20 — above that Google truncates the rich-result
+  // anyway and we'd just bloat the prerendered HTML.
+  group.hasVariant = active.slice(0, 20).map((plan) => {
+    const variantId = url + '#variant-' + plan.id
+    const durationLabel = planDurationLabelFa(plan)
+    const variantNameParts = [service.titleFa]
+    if (plan.titleFa) variantNameParts.push(plan.titleFa)
+    else if (durationLabel) variantNameParts.push(durationLabel)
+    const variant: Json = {
+      '@type': 'Product',
+      '@id': variantId,
+      name: variantNameParts.join(' — '),
+      sku: plan.id,
+      isVariantOf: { '@id': groupId },
+      inLanguage: 'fa-IR',
+      offers: {
+        '@type': 'Offer',
+        url,
+        priceCurrency: 'IRR',
+        price: Math.round((plan.priceIrt as number) * 10),
+        availability,
+        seller,
+        eligibleRegion: variantEligibleRegion,
+      },
+    }
+    if (service.logoUrl) variant.image = absoluteUrl(service.logoUrl)
+    const additionalProperty: Json[] = []
+    if (plan.durationDays && plan.durationDays > 0) {
+      additionalProperty.push({
+        '@type': 'PropertyValue',
+        propertyID: 'duration',
+        name: 'مدت',
+        value: durationLabel ?? `${plan.durationDays} روز`,
+      })
+    }
+    if (plan.region && plan.region.trim()) {
+      additionalProperty.push({
+        '@type': 'PropertyValue',
+        propertyID: 'region',
+        name: 'منطقه',
+        value: plan.region.trim(),
+      })
+    }
+    if (plan.accountType && plan.accountType.trim()) {
+      additionalProperty.push({
+        '@type': 'PropertyValue',
+        propertyID: 'accountType',
+        name: 'نوع اکانت',
+        value: plan.accountType.trim(),
+      })
+    }
+    if (additionalProperty.length > 0) {
+      variant.additionalProperty = additionalProperty
+    }
+    return variant
+  })
+
+  return group
 }
 
 /**

@@ -41,6 +41,7 @@ import { formatToman, toPersianDigits } from '../lib/format'
 import { iconFor, colorForCategory } from '../lib/icons'
 import { useSEO } from '../hooks/useSEO'
 import { seoForService, seoForServiceNotFound } from '../lib/seoConfig'
+import { getRelatedBlogPostsForService, type BlogPost } from '../lib/blog'
 
 const FALLBACK = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%231a1b26"/><circle cx="32" cy="26" r="9" fill="%23505162"/><path d="M14 56c0-9.94 8.06-18 18-18s18 8.06 18 18" fill="%23505162"/></svg>'
 
@@ -74,6 +75,15 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
     return getServicesByCategory(service.categoryId)
       .filter((s) => s.id !== service.id)
       .slice(0, 4)
+  }, [service])
+
+  // Internal-link block: surface every blog post that primarily covers
+  // this service plus posts that name it as a related entry. Helps
+  // distribute crawl + topical authority between the catalogue and the
+  // editorial surface («جریان داخلی» in the SEO roadmap).
+  const relatedPosts: BlogPost[] = useMemo(() => {
+    if (!service) return []
+    return getRelatedBlogPostsForService(service.slug, 6)
   }, [service])
 
   // Lazy-loaded long description, FAQ and SEO overrides for THIS slug.
@@ -513,6 +523,63 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
               )
             })}
           </div>
+        </section>
+      )}
+
+      {/* related blog posts */}
+      {relatedPosts.length > 0 && service && (
+        <section className="mt-10">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <span className="w-1 h-6 bg-[#d4a853] rounded-full" />
+              <h2 className="text-lg font-black text-white">
+                مقالات مرتبط درباره {service.titleFa}
+              </h2>
+            </div>
+            <AppLink
+              href="/blog"
+              onNavigate={onNavigate}
+              className="text-xs text-[#d4a853] hover:underline font-medium no-underline"
+            >
+              وبلاگ پی‌کارت
+            </AppLink>
+          </div>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 list-none p-0 m-0">
+            {relatedPosts.map((post) => (
+              <li
+                key={post.slug}
+                className="bg-[#13141a] border border-[#1e1f2a] rounded-2xl overflow-hidden hover:border-[#d4a853]/40 transition-colors"
+              >
+                <AppLink
+                  href={'/blog/' + post.slug}
+                  onNavigate={onNavigate}
+                  className="flex flex-col h-full no-underline"
+                >
+                  {post.coverImage && (
+                    <img
+                      src={post.coverImage}
+                      alt={post.titleFa}
+                      width={640}
+                      height={360}
+                      loading="lazy"
+                      className="w-full aspect-video object-cover"
+                    />
+                  )}
+                  <div className="p-4 flex flex-col gap-2 flex-1">
+                    <h3 className="text-sm md:text-[15px] font-bold text-white leading-7">
+                      {post.titleFa}
+                    </h3>
+                    <p className="text-xs text-[#8a8b96] line-clamp-2 leading-6">
+                      {post.excerpt}
+                    </p>
+                    <div className="mt-auto pt-1 text-xs text-[#d4a853]">
+                      خواندن مقاله ←
+                    </div>
+                  </div>
+                </AppLink>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
