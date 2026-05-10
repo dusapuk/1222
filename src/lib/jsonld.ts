@@ -8,6 +8,9 @@
  * (e.g. don't fake aggregateRating until reviews are imported).
  */
 import {
+  CONTACT_ADDRESS,
+  CONTACT_EMAIL,
+  CONTACT_PHONE_TEL,
   SITE_NAME,
   SITE_NAME_EN,
   SITE_URL,
@@ -16,6 +19,20 @@ import {
   clampDescription,
 } from './seo'
 import type { Category, Plan, Service } from './data'
+
+/**
+ * Hard-cap validity for short-lived offers. Schema.org Offer prefers a
+ * `priceValidUntil` to communicate the price freeze window; without it,
+ * Google may flag the offer as stale and stop showing rich pricing in
+ * SERP. We default to ~6 months from build time — long enough that
+ * normal price tweaks don't invalidate the snippet, short enough that a
+ * stale build can't promise an indefinite price.
+ */
+function defaultPriceValidUntil(): string {
+  const now = new Date()
+  now.setMonth(now.getMonth() + 6)
+  return now.toISOString().slice(0, 10)
+}
 
 type Json = Record<string, unknown>
 
@@ -29,6 +46,22 @@ export function organizationLd(): Json {
     alternateName: SITE_NAME_EN,
     url: SITE_URL + '/',
     logo: absoluteUrl('/favicon.svg'),
+    telephone: CONTACT_PHONE_TEL,
+    email: CONTACT_EMAIL,
+    address: {
+      '@type': 'PostalAddress',
+      ...CONTACT_ADDRESS,
+    },
+    contactPoint: [
+      {
+        '@type': 'ContactPoint',
+        contactType: 'customer support',
+        telephone: CONTACT_PHONE_TEL,
+        email: CONTACT_EMAIL,
+        availableLanguage: ['Persian', 'fa', 'en'],
+        areaServed: 'IR',
+      },
+    ],
   }
   if (sameAs.length > 0) org.sameAs = sameAs
   return org
@@ -166,6 +199,40 @@ function buildOffers(args: {
     ? 'https://schema.org/InStock'
     : 'https://schema.org/OutOfStock'
 
+  // Fields shared across every Offer / AggregateOffer variant: the
+  // schema.org-recommended trust signals Google requires for rich
+  // pricing snippets. `seller`, `priceValidUntil`, return policy and a
+  // shipping zero-fee descriptor are the four that gate Merchant Center
+  // eligibility for digital products.
+  const seller: Json = { '@id': SITE_URL + '/#organization' }
+  const priceValidUntil = defaultPriceValidUntil()
+  const hasMerchantReturnPolicy: Json = {
+    '@type': 'MerchantReturnPolicy',
+    applicableCountry: 'IR',
+    returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+    merchantReturnDays: 3,
+    returnMethod: 'https://schema.org/ReturnByMail',
+    returnFees: 'https://schema.org/FreeReturn',
+  }
+  // Digital delivery: instant, no shipping cost, no shipping time.
+  const shippingDetails: Json = {
+    '@type': 'OfferShippingDetails',
+    shippingRate: {
+      '@type': 'MonetaryAmount',
+      value: 0,
+      currency: 'IRR',
+    },
+    shippingDestination: {
+      '@type': 'DefinedRegion',
+      addressCountry: 'IR',
+    },
+    deliveryTime: {
+      '@type': 'ShippingDeliveryTime',
+      handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 0, unitCode: 'HUR' },
+      transitTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 1, unitCode: 'HUR' },
+    },
+  }
+
   if (priced.length > 1) {
     const prices = priced.map((p) => p.priceIrt as number)
     return {
@@ -176,6 +243,10 @@ function buildOffers(args: {
       offerCount: priced.length,
       availability,
       url,
+      priceValidUntil,
+      seller,
+      hasMerchantReturnPolicy,
+      shippingDetails,
     }
   }
 
@@ -187,6 +258,10 @@ function buildOffers(args: {
       price: Math.round(single.priceIrt * 10),
       availability,
       url,
+      priceValidUntil,
+      seller,
+      hasMerchantReturnPolicy,
+      shippingDetails,
     }
   }
 
@@ -197,6 +272,10 @@ function buildOffers(args: {
       price: Math.round(service.fromPriceIrt * 10),
       availability,
       url,
+      priceValidUntil,
+      seller,
+      hasMerchantReturnPolicy,
+      shippingDetails,
     }
   }
   return null

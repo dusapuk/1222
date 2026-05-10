@@ -30,6 +30,7 @@ import {
 } from '../lib/data'
 import { ProductCard } from '../components/ProductCard'
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { AppLink } from '../components/AppLink'
 import { formatToman, toPersianDigits } from '../lib/format'
 import { iconFor, colorForCategory } from '../lib/icons'
 import { useSEO } from '../hooks/useSEO'
@@ -108,13 +109,17 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
         <h1 className="text-2xl font-black text-white mb-3">سرویس پیدا نشد</h1>
-        <button
-          type="button"
-          onClick={() => onNavigate('/categories')}
+        <a
+          href="/categories"
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+            e.preventDefault()
+            onNavigate('/categories')
+          }}
           className="text-[#d4a853] hover:underline"
         >
           مشاهده دسته‌بندی‌ها
-        </button>
+        </a>
       </div>
     )
   }
@@ -133,6 +138,13 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
         ]}
         onNavigate={onNavigate}
       />
+
+      {/* Canonical <h1> for the page — must precede every other heading
+          in the DOM for SEO. The visible product card in the sidebar
+          shows a styled <p> with the same copy so the page still reads
+          "خرید X" prominently to humans. Keep this sr-only so we
+          don't double-render the title visually. */}
+      <h1 className="sr-only">خرید {service.titleFa}{service.titleEn ? ` — ${service.titleEn}` : ''}</h1>
 
       <div className="mt-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* main info */}
@@ -233,19 +245,26 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
               </div>
               <div className="flex-1 min-w-0">
                 {category && Icon && (
-                  <button
-                    type="button"
-                    onClick={() => onNavigate('/c/' + category.slug)}
-                    className="inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-md mb-1.5 transition-colors hover:opacity-80"
+                  <a
+                    href={'/c/' + category.slug}
+                    onClick={(e) => {
+                      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+                      e.preventDefault()
+                      onNavigate('/c/' + category.slug)
+                    }}
+                    className="inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-md mb-1.5 transition-colors hover:opacity-80 no-underline"
                     style={{ background: `${color}15`, color }}
                   >
                     <Icon size={10} />
                     {category.titleFa}
-                  </button>
+                  </a>
                 )}
-                <h1 className="text-lg font-black text-white leading-tight line-clamp-2">
+                <p
+                  aria-hidden="true"
+                  className="text-lg font-black text-white leading-tight line-clamp-2 m-0"
+                >
                   خرید {service.titleFa}
-                </h1>
+                </p>
                 {service.titleEn && (
                   <p className="text-xs text-[#6b6c78] mt-0.5" dir="ltr">
                     {service.titleEn}
@@ -474,20 +493,20 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
               <span className="w-1 h-6 bg-[#d4a853] rounded-full" />
               <h2 className="text-lg font-black text-white">سرویس‌های مشابه</h2>
             </div>
-            <button
-              type="button"
-              onClick={() => onNavigate('/c/' + category.slug)}
-              className="text-xs text-[#d4a853] hover:underline font-medium"
+            <AppLink
+              href={'/c/' + category.slug}
+              onNavigate={onNavigate}
+              className="text-xs text-[#d4a853] hover:underline font-medium no-underline"
             >
               مشاهده همه
-            </button>
+            </AppLink>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {related.map((s) => (
               <ProductCard
                 key={s.id}
                 service={s}
-                onClick={() => onNavigate('/s/' + s.slug)}
+                onNavigate={onNavigate}
               />
             ))}
           </div>

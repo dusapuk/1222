@@ -83,11 +83,22 @@ export function seoForCategory(args: {
   categoryImage?: string | null
   page?: number
   pageCount?: number
+  /**
+   * True when the user has an active filter (price range, in-stock,
+   * discount, AI-only, popular-only, or a free-text query). Filtered
+   * variants of a category page are not canonical and must be
+   * `noindex` so Google doesn't bloat its index with thousands of
+   * thin near-duplicates.
+   */
+  hasFilters?: boolean
 }): SEOConfig {
-  const { category, services, categoryImage, page = 1, pageCount } = args
+  const { category, services, categoryImage, page = 1, pageCount, hasFilters = false } = args
   // Canonical drops `?page=1` so the bare and paged variant don't compete
-  // for ranking; only emit ?page=N when N > 1.
-  const path = `/c/${category.slug}` + (page > 1 ? `?page=${page}` : '')
+  // for ranking; only emit ?page=N when N > 1. Filtered variants always
+  // canonicalise back to the bare category URL.
+  const path = hasFilters
+    ? `/c/${category.slug}`
+    : `/c/${category.slug}` + (page > 1 ? `?page=${page}` : '')
 
   // rel=next / rel=prev for paginated category indexes — Bing/Yandex still
   // honour these and Google has reaffirmed they're "informational" signals.
@@ -110,8 +121,9 @@ export function seoForCategory(args: {
     path,
     image: categoryImage,
     imageAlt: `خرید ${category.titleFa} در پی‌کارت`,
-    linkRelNext,
-    linkRelPrev,
+    noindex: hasFilters,
+    linkRelNext: hasFilters ? null : linkRelNext,
+    linkRelPrev: hasFilters ? null : linkRelPrev,
     jsonLd: [
       breadcrumbLd([
         { name: 'دسته‌بندی‌ها', path: '/categories' },

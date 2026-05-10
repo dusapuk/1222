@@ -1,4 +1,5 @@
 import { ChevronLeft, Home } from 'lucide-react'
+import { AppLink } from './AppLink'
 
 export type Crumb = {
   label: string
@@ -23,14 +24,14 @@ export function Breadcrumbs({ items, onNavigate }: BreadcrumbsProps) {
             <li key={i} className="flex items-center gap-1">
               {i > 0 && <ChevronLeft size={12} className="text-[#3a3b48]" aria-hidden />}
               {c.path && !isLast ? (
-                <button
-                  type="button"
-                  onClick={() => onNavigate(c.path!)}
+                <AppLink
+                  href={c.path}
+                  onNavigate={onNavigate}
                   className="flex items-center gap-1 hover:text-[#d4a853] transition-colors"
                 >
                   {isHome && <Home size={12} aria-hidden />}
                   {c.label}
-                </button>
+                </AppLink>
               ) : (
                 <span
                   className={

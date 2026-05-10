@@ -1,29 +1,37 @@
 import { ShoppingCart, Heart, Eye, Percent, Sparkles, Flame, AlertCircle } from 'lucide-react'
+import type { MouseEvent } from 'react'
 import type { Service } from '../lib/data'
 import { getDiscountPct } from '../lib/data'
 import { formatToman } from '../lib/format'
+import { AppLink } from './AppLink'
 
 const FALLBACK = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%231a1b26"/><circle cx="32" cy="26" r="9" fill="%23505162"/><path d="M14 56c0-9.94 8.06-18 18-18s18 8.06 18 18" fill="%23505162"/></svg>'
 
 export type ProductCardProps = {
   service: Service
-  onClick?: (s: Service) => void
+  onNavigate: (path: string, params?: Record<string, string | number | null | undefined>) => void
   variant?: 'default' | 'compact'
 }
 
-export function ProductCard({ service: s, onClick, variant = 'default' }: ProductCardProps) {
+export function ProductCard({ service: s, onNavigate, variant = 'default' }: ProductCardProps) {
   const discount = getDiscountPct(s)
   const compact = variant === 'compact'
+  const href = '/s/' + s.slug
+
+  // Inner action buttons (favourite / quick view / cart) must not bubble
+  // up to the outer link. Stop propagation on the wrapping anchor click
+  // event so a click on the heart icon doesn't navigate to the product.
+  function stop(e: MouseEvent): void {
+    e.stopPropagation()
+    e.preventDefault()
+  }
 
   return (
-    <div
-      onClick={() => onClick?.(s)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') onClick?.(s)
-      }}
-      className="group bg-[#13141a] border border-[#1e1f2a] rounded-2xl overflow-hidden hover:border-[#d4a853]/40 transition-all cursor-pointer flex flex-col focus:outline-none focus:ring-2 focus:ring-[#d4a853]/50"
+    <AppLink
+      href={href}
+      onNavigate={onNavigate}
+      aria-label={`خرید ${s.titleFa}`}
+      className="group bg-[#13141a] border border-[#1e1f2a] rounded-2xl overflow-hidden hover:border-[#d4a853]/40 transition-all flex flex-col focus:outline-none focus:ring-2 focus:ring-[#d4a853]/50 no-underline text-inherit"
     >
       <div className={`relative overflow-hidden aspect-square bg-gradient-to-br from-[#1a1b26] to-[#0e0f15] ${compact ? 'p-4' : ''}`}>
         <img
@@ -73,7 +81,7 @@ export function ProductCard({ service: s, onClick, variant = 'default' }: Produc
         <div className="absolute bottom-3 left-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             type="button"
-            onClick={(e) => e.stopPropagation()}
+            onClick={stop}
             className="w-8 h-8 bg-[#0b0c10]/80 backdrop-blur-sm rounded-lg flex items-center justify-center text-[#8a8b96] hover:text-[#e63946] transition-colors"
             aria-label="افزودن به علاقه‌مندی"
           >
@@ -81,7 +89,7 @@ export function ProductCard({ service: s, onClick, variant = 'default' }: Produc
           </button>
           <button
             type="button"
-            onClick={(e) => e.stopPropagation()}
+            onClick={stop}
             className="w-8 h-8 bg-[#0b0c10]/80 backdrop-blur-sm rounded-lg flex items-center justify-center text-[#8a8b96] hover:text-white transition-colors"
             aria-label="نمایش سریع"
           >
@@ -114,7 +122,8 @@ export function ProductCard({ service: s, onClick, variant = 'default' }: Produc
             type="button"
             onClick={(e) => {
               e.stopPropagation()
-              onClick?.(s)
+              e.preventDefault()
+              onNavigate(href)
             }}
             className="bg-[#1e1f2a] hover:bg-[#d4a853] text-[#8a8b96] hover:text-[#0b0c10] w-9 h-9 rounded-xl flex items-center justify-center transition-all shrink-0"
             aria-label="افزودن به سبد"
@@ -123,6 +132,6 @@ export function ProductCard({ service: s, onClick, variant = 'default' }: Produc
           </button>
         </div>
       </div>
-    </div>
+    </AppLink>
   )
 }
