@@ -169,6 +169,10 @@ routes.push({
   seo: seoForHome({
     categoryCount: marketplace.categories.length,
     serviceCount: marketplace.services.length,
+    // Drives `OnlineStore.makesOffer` in the home page's Organization
+    // JSON-LD. Lets the Knowledge Graph see the marketplace as a
+    // parent entity grouping all 14 verticals.
+    categories: marketplace.categories,
   }),
 })
 

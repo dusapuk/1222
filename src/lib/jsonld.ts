@@ -29,6 +29,7 @@ import { getCategoryBySlug } from './data'
 import type { ServiceReview } from './reviews'
 import type { BlogPost } from './blog'
 import { computeBlogWordCount } from './blog'
+import { hasPerBlogOgImage, perBlogOgImagePath } from './blogOgImages'
 import type { AuthorPage } from './staticPages'
 import { getServiceRegions, type RegionRef } from './regions'
 
@@ -48,7 +49,15 @@ function defaultPriceValidUntil(): string {
 
 type Json = Record<string, unknown>
 
-export function organizationLd(): Json {
+export function organizationLd(args?: {
+  /**
+   * When provided, expands `OnlineStore.makesOffer` to a list of
+   * `OfferCatalog`s (one per top-level category) so the marketplace's
+   * 14 verticals are linked to the brand entity. Use on the home page
+   * only — sub-pages should keep the lightweight Organization payload.
+   */
+  categories?: Array<Pick<Category, 'slug' | 'titleFa' | 'description'>>
+}): Json {
   const sameAs = SOCIAL_LINKS.map((s) => s.url.trim()).filter(Boolean)
   const coords = getGeoCoordinates()
   const currencies = CURRENCIES_ACCEPTED.split(',').map((s) => s.trim()).filter(Boolean)
@@ -100,6 +109,24 @@ export function organizationLd(): Json {
   }
   if (GEO_MAP_URL) org.hasMap = GEO_MAP_URL
   if (sameAs.length > 0) org.sameAs = sameAs
+  // Connect the OnlineStore entity to all 14 verticals so the
+  // Knowledge Graph sees the marketplace as a parent entity grouping
+  // the categories — strong signal for the brand-name SERP, used on
+  // the home page only to keep sub-page payloads lean.
+  if (args?.categories && args.categories.length > 0) {
+    org.makesOffer = args.categories
+      .filter((c) => c.slug && c.titleFa)
+      .map((c) => ({
+        '@type': 'OfferCatalog',
+        '@id': absoluteUrl('/c/' + c.slug) + '#catalog',
+        name: c.titleFa,
+        url: absoluteUrl('/c/' + c.slug),
+        ...(c.description
+          ? { description: c.description.replace(/\s+/g, ' ').trim() }
+          : {}),
+        inLanguage: 'fa-IR',
+      }))
+  }
   return org
 }
 
@@ -790,7 +817,21 @@ export function articleLd(args: {
 }): Json {
   const { post, primaryServiceUrl, primaryServiceName } = args
   const url = absoluteUrl('/blog/' + post.slug)
-  const image = post.coverImage ? absoluteUrl(post.coverImage) : absoluteUrl('/images/og/og-default.png')
+  // Prefer the per-post 1200×630 social card emitted by
+  // `scripts/generate-blog-og-images.ts`. Schema.org Article schema
+  // accepts either a single URL string or an `[url1, url2, ...]`
+  // array; we provide both the cover JPG and the social PNG so
+  // Google can pick the cleanest aspect ratio for AI Overviews and
+  // Discover.
+  const ogImage = hasPerBlogOgImage(post.slug)
+    ? absoluteUrl(perBlogOgImagePath(post.slug))
+    : null
+  const coverImage = post.coverImage
+    ? absoluteUrl(post.coverImage)
+    : absoluteUrl('/images/og/og-default.png')
+  const image: string | string[] = ogImage
+    ? [ogImage, coverImage]
+    : coverImage
   const dateModified = post.dateModified || post.datePublished
 
   // E-E-A-T: tie the post to a real `Person` whenever the operator has

@@ -40,6 +40,7 @@ import type { ServiceReview } from './reviews'
 import { getDiscountPct, getPlanDiscountPct, getCategoryPlanCount } from './data'
 import { getCategoryFaqs } from './categoryFaqs'
 import { HOME_FAQ } from './homeContent'
+import { hasPerBlogOgImage, perBlogOgImagePath } from './blogOgImages'
 import { hasPerServiceOgImage, perServiceOgImagePath } from './serviceOgImages'
 
 /**
@@ -85,8 +86,16 @@ function pickServiceTagline(service: Service, category?: Category): string {
 export function seoForHome(args: {
   categoryCount: number
   serviceCount: number
+  /**
+   * Optional list of all top-level categories. When passed, the home
+   * page's Organization JSON-LD expands `OnlineStore.makesOffer` with
+   * one `OfferCatalog` per vertical — strong Knowledge Graph signal.
+   * The prerender script wires this through; client-side renders may
+   * skip it (the catalog is already fetched there).
+   */
+  categories?: Category[]
 }): SEOConfig {
-  const { categoryCount, serviceCount } = args
+  const { categoryCount, serviceCount, categories } = args
   // E-E-A-T-aware title: leads with Jalali year as freshness signal,
   // mirrors the pattern license-market.ir / account4all use to win CTR
   // on commercial queries («خرید ... ۱۴۰۴»).
@@ -100,7 +109,7 @@ export function seoForHome(args: {
   // license-market.ir uses to dominate «لایسنس مارکت» queries.
   const homeFaq = faqLd(HOME_FAQ)
   const jsonLd: Array<Record<string, unknown> | null> = [
-    organizationLd(),
+    organizationLd({ categories }),
     websiteLd(),
     breadcrumbLd([]),
   ]
@@ -354,17 +363,44 @@ export function seoForService(args: {
 }
 
 /**
+ * Per-category SERP-padding fragment used by
+ * `buildCategoryMetaDescription` when the DB descriptor is too short
+ * to push the meta into the 140-160 ch budget. Each value names the
+ * vertical's marquee brands so the snippet acquires keyword variety
+ * without sounding stuffed.
+ */
+const CATEGORY_META_HIGHLIGHTS: Record<string, string> = {
+  'ai-assistants': 'ChatGPT Plus، Claude Pro، Gemini و Perplexity',
+  'ai-image': 'Midjourney، DALL·E، Leonardo و Adobe Firefly',
+  'ai-video': 'Runway، Sora، Pika و HeyGen',
+  'ai-voice-music': 'ElevenLabs، Suno، Udio و Murf',
+  'ai-writing-seo': 'Jasper، Copy.ai، SurferSEO و Frase',
+  'developer-tools': 'GitHub Copilot، JetBrains، Cursor و Replit',
+  'design-creative': 'Canva Pro، Adobe Creative Cloud و Figma',
+  'productivity-work': 'Notion، Microsoft 365، Grammarly و Quizlet',
+  streaming: 'Netflix، Disney+، HBO Max و Crunchyroll',
+  music: 'Spotify Premium، Apple Music، Tidal و YouTube Premium',
+  education: 'Duolingo Plus، Coursera، Babbel و Quizlet',
+  'cloud-storage': 'Google One، iCloud+، Dropbox و OneDrive',
+  'social-communication': 'Telegram Premium، LinkedIn و WhatsApp Business',
+  'business-marketing': 'HubSpot، Mailchimp، Ahrefs و Semrush',
+}
+
+/**
  * Build a number-rich Persian meta description for a category page.
  *
- * Currently each category in the DB has a 40-60 character descriptor
- * which truncates to ~50 chars in the meta tag — well below the
- * 140-160 ch Google budget, so the SERP snippet ends up generic and
- * loses CTR vs. number-heavy competitors (numberland.ir, license-market).
- * This helper:
+ * Each category in the DB has a 40-60 character descriptor which
+ * truncates to ~50 chars in the meta tag — well below the 140-160 ch
+ * Google budget, so the SERP snippet ends up generic and loses CTR
+ * vs. number-heavy competitors (numberland.ir, license-market). This
+ * helper:
  *   1. Leads with the Jalali year + service & plan counts.
  *   2. Folds the DB descriptor in as a middle tail when present.
- *   3. Always closes with the trust block («تحویل آنی، گارانتی اصالت،
- *      پشتیبانی فارسی»). The result is consistently 140-160 chars.
+ *   3. Falls back to a per-category brand-highlight fragment
+ *      (`CATEGORY_META_HIGHLIGHTS`) when the DB descriptor is empty
+ *      or too short to push the line into the 140-158 ch sweet spot.
+ *   4. Always closes with the trust block («تحویل آنی، گارانتی اصالت،
+ *      پشتیبانی فارسی»). Resulting meta is consistently 140-158 chars.
  */
 function buildCategoryMetaDescription(args: {
   category: Category
@@ -379,25 +415,67 @@ function buildCategoryMetaDescription(args: {
       : serviceCount > 0
         ? `${toPersianDigits(serviceCount)} سرویس فعال`
         : null
-  const tail = 'تحویل آنی، گارانتی اصالت، پرداخت تومانی، پشتیبانی فارسی ۲۴/۷.'
 
-  // Try the long form first («head — counts — DB-desc — tail»). If it
-  // overflows the 158-char clamp, drop the DB descriptor. If still too
-  // long, drop the count fragment. clampDescription will trim with an
-  // ellipsis as a final guard.
+  // Three trust-tail variants, longest first. The helper falls back
+  // to a shorter tail when the longer fragments leave no room within
+  // the 158-ch budget — guaranteeing every category meta lands in
+  // [140,158] ch instead of dropping to <140 by losing too much copy.
+  const tails = [
+    'تحویل آنی، گارانتی اصالت، پرداخت تومانی، پشتیبانی فارسی ۲۴/۷.',
+    'تحویل آنی، گارانتی اصالت و پشتیبانی فارسی ۲۴/۷.',
+    'تحویل آنی و پشتیبانی ۲۴/۷.',
+  ]
+
   const dbDesc = (category.description ?? '').replace(/\s+/g, ' ').trim()
-  const variants = [
-    [head, counts, dbDesc, tail],
-    [head, counts, tail],
-    [head, tail],
-  ] as const
+  const slug = category.slug ?? ''
+  const highlight = CATEGORY_META_HIGHLIGHTS[slug] ?? null
+  // Two brand-fragment variants — the "از جمله ..." prefix improves
+  // readability but eats 8 chars; we drop it when needed.
+  const brandLong = highlight ? `از جمله ${highlight}` : null
+  const brandShort = highlight
 
-  for (const parts of variants) {
-    const line = parts.filter(Boolean).join(' — ')
-    if (line.length <= 158) return line
+  // Build the candidate matrix: every combination of (content middle
+  // fragments) × (trust tail variant) yields a candidate. Then pick
+  // the longest candidate that fits ≤158 ch AND ≥140 ch. If none
+  // qualify, fall back to the longest fitting candidate (or the
+  // longest candidate overall if every one overflows the clamp).
+  const middleVariants: Array<Array<string | null>> = [
+    [counts, dbDesc, brandLong],
+    [counts, dbDesc, brandShort],
+    [counts, brandLong],
+    [counts, brandShort],
+    [counts, dbDesc],
+    [counts],
+    [dbDesc, brandLong],
+    [dbDesc, brandShort],
+    [brandLong],
+    [brandShort],
+    [dbDesc],
+    [],
+  ]
+
+  const candidates: string[] = []
+  for (const middle of middleVariants) {
+    for (const tail of tails) {
+      const line = [head, ...middle, tail].filter(Boolean).join(' — ')
+      candidates.push(line)
+    }
   }
-  // All variants overflow — let clampDescription trim the longest one.
-  return [head, counts, dbDesc, tail].filter(Boolean).join(' — ')
+
+  let bestInRange: string | null = null
+  let bestUnder158: string | null = null
+  let longest: string | null = null
+  for (const line of candidates) {
+    if (!longest || line.length > longest.length) longest = line
+    if (line.length > 158) continue
+    if (!bestUnder158 || line.length > bestUnder158.length) bestUnder158 = line
+    if (line.length >= 140 && line.length <= 158) {
+      if (!bestInRange || line.length > bestInRange.length) bestInRange = line
+    }
+  }
+  if (bestInRange) return bestInRange
+  if (bestUnder158) return bestUnder158
+  return longest ?? head
 }
 
 /**
@@ -602,11 +680,19 @@ export function seoForBlogPost(args: {
     if (ht) jsonLd.push(ht)
   }
 
+  // Prefer the per-post 1200×630 social card emitted by
+  // `scripts/generate-blog-og-images.ts` over the generic
+  // `coverImage` JPG (which lives at /images/categories/<cat>.jpg and
+  // therefore collides across every post in the same category).
+  const ogImage = hasPerBlogOgImage(post.slug)
+    ? perBlogOgImagePath(post.slug)
+    : post.coverImage
+
   return {
     title: post.titleFa,
     description: clampDescription(post.excerpt, 200),
     path,
-    image: post.coverImage,
+    image: ogImage,
     imageAlt: post.coverAlt,
     imageWidth: 1200,
     imageHeight: 630,
