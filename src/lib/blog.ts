@@ -5710,6 +5710,63 @@ export function findBlogPost(slug: string): BlogPost | undefined {
   return BLOG_POSTS.find((p) => p.slug === slug)
 }
 
+/**
+ * Count "words" inside a Persian blog post body.
+ *
+ * Persian / Arabic don't have a hard word boundary the way English
+ * does (Persian uses ZWNJ inside many compound words, e.g.
+ * «می‌خواهم»), so we tokenise on Unicode whitespace AND on the
+ * zero-width non-joiner. Numbers, English brand names, and
+ * punctuation are kept since Google itself counts them.
+ *
+ * Includes:
+ *   - excerpt (counts as the dek/lede summary)
+ *   - every section's heading + body paragraphs + bullets
+ *   - FAQ questions/answers (rendered inline on the page)
+ *   - HowTo step names + bodies
+ *
+ * Used by `articleLd()` to emit `BlogPosting.wordCount` and to
+ * derive `timeRequired = PT{wordCount/220}M`. Both fields are
+ * recommended by Google's Article rich-result docs and are part
+ * of the AI-Overviews / Top-Stories candidate-selection signals.
+ */
+export function computeBlogWordCount(post: BlogPost): number {
+  const chunks: string[] = []
+  if (post.excerpt) chunks.push(post.excerpt)
+  for (const section of post.sections) {
+    if (section.heading) chunks.push(section.heading)
+    if (section.body) chunks.push(...section.body)
+    if (section.bullets) chunks.push(...section.bullets)
+    if (section.cta?.label) chunks.push(section.cta.label)
+  }
+  if (post.faq) {
+    for (const item of post.faq) {
+      chunks.push(item.question, item.answer)
+    }
+  }
+  if (post.howToSteps) {
+    for (const step of post.howToSteps) {
+      chunks.push(step.name, step.text)
+    }
+  }
+  let total = 0
+  for (const chunk of chunks) {
+    if (!chunk) continue
+    // Strip the inline `[anchor](slug)` markdown so we don't count
+    // the anchor URL twice (once for the visible label, once for
+    // the slug). Keep only the visible label.
+    const visible = chunk.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    // Tokens: collapse all whitespace + ZWNJ runs into a single
+    // separator, then split. Empty tokens are dropped.
+    const tokens = visible
+      .replace(/[\u200c\u200d]/g, ' ')
+      .split(/\s+/u)
+      .filter(Boolean)
+    total += tokens.length
+  }
+  return total
+}
+
 /** Sort newest first by `datePublished` for the index. */
 export function getBlogPostsSorted(): BlogPost[] {
   return [...BLOG_POSTS].sort((a, b) => b.datePublished.localeCompare(a.datePublished))

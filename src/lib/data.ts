@@ -228,6 +228,24 @@ export function getCategoryServiceCount(categoryId: string): number {
   return servicesByCategory.get(categoryId)?.length ?? 0
 }
 
+/**
+ * Count of `isActive` plans across every service in a category. Used to
+ * surface concrete numbers in the `/c/<slug>` meta-description (mirrors
+ * the «{N} سرویس و {M} پلن» pattern numberland.ir uses to win CTR on
+ * category SERPs).
+ */
+export function getCategoryPlanCount(categoryId: string): number {
+  const list = servicesByCategory.get(categoryId)
+  if (!list) return 0
+  let total = 0
+  for (const s of list) {
+    const arr = plansByService.get(s.id)
+    if (!arr) continue
+    for (const p of arr) if (p.isActive) total++
+  }
+  return total
+}
+
 export function getPlansByService(serviceId: string): Plan[] {
   return plansByService.get(serviceId) ?? []
 }

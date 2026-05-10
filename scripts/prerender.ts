@@ -58,6 +58,7 @@ import {
 } from '../src/lib/seo'
 import type { SEOConfig } from '../src/hooks/useSEO'
 import type { Category, Marketplace, Plan, Service, ServiceDetail } from '../src/lib/data'
+import { setMarketplaceData } from '../src/lib/data'
 import { BLOG_POSTS, getBlogPostsSorted } from '../src/lib/blog'
 import type { ServiceReview } from '../src/lib/reviews'
 
@@ -116,6 +117,12 @@ const ssrModule = (await import(pathToFileURL(ssrEntryPath).href)) as {
 const marketplace = JSON.parse(
   readFileSync(resolve(repoRoot, 'public/data/marketplace.json'), 'utf8'),
 ) as { categories: Category[]; services: Service[]; plans: Plan[] }
+
+// Seed `data.ts` so JSON-LD builders that look up categories by slug
+// (e.g. `articleLd` resolving `articleSection` to the human-readable
+// Persian title) work *before* the SSR `render()` step is invoked.
+// `entry-server.tsx` re-seeds with the same payload, which is a no-op.
+setMarketplaceData(marketplace as Marketplace)
 
 const categoryById = new Map(marketplace.categories.map((c) => [c.id, c]))
 const servicesByCategory = new Map<string, Service[]>()

@@ -25,8 +25,10 @@ import {
   stripHtml,
 } from './seo'
 import type { Category, Plan, Service } from './data'
+import { getCategoryBySlug } from './data'
 import type { ServiceReview } from './reviews'
 import type { BlogPost } from './blog'
+import { computeBlogWordCount } from './blog'
 import type { AuthorPage } from './staticPages'
 import { getServiceRegions, type RegionRef } from './regions'
 
@@ -804,6 +806,20 @@ export function articleLd(args: {
     author.sameAs = post.authorSameAs.filter(Boolean)
   }
 
+  // Word-count + reading time signals — Google uses both for AI
+  // Overviews / Top Stories candidate selection. We compute against
+  // the actual post body (sections + bullets + FAQ + howto) so the
+  // numbers are honest even when the excerpt is brief.
+  const wordCount = computeBlogWordCount(post)
+  // Use a calmer 220 wpm for Persian (vs. the 250 wpm Anglophone
+  // baseline) since Persian sentences carry more characters per word.
+  const readingMinutes = Math.max(2, Math.ceil(wordCount / 220))
+  // Resolve the human-readable Persian category title for
+  // `articleSection` — the schema.org docs explicitly recommend a
+  // human-readable name here, not a slug.
+  const categoryTitleFa =
+    getCategoryBySlug(post.primaryCategorySlug)?.titleFa ?? post.primaryCategorySlug
+
   const article: Json = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
@@ -822,7 +838,9 @@ export function articleLd(args: {
     author,
     publisher: { '@id': SITE_URL + '/#organization' },
     keywords: post.keywords.join(', '),
-    articleSection: post.primaryCategorySlug,
+    articleSection: categoryTitleFa,
+    wordCount,
+    timeRequired: `PT${readingMinutes}M`,
     isPartOf: { '@id': SITE_URL + '/blog#blog' },
   }
   if (primaryServiceUrl && primaryServiceName) {

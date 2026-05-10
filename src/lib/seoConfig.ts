@@ -37,8 +37,9 @@ import {
 import type { AuthorPage, StaticPage } from './staticPages'
 import type { BlogPost } from './blog'
 import type { ServiceReview } from './reviews'
-import { getDiscountPct, getPlanDiscountPct } from './data'
+import { getDiscountPct, getPlanDiscountPct, getCategoryPlanCount } from './data'
 import { getCategoryFaqs } from './categoryFaqs'
+import { HOME_FAQ } from './homeContent'
 import { hasPerServiceOgImage, perServiceOgImagePath } from './serviceOgImages'
 
 /**
@@ -93,6 +94,17 @@ export function seoForHome(args: {
   const description = clampDescription(
     `مارکت‌پلیس ${toPersianDigits(serviceCount)}+ سرویس دیجیتال در ${toPersianDigits(categoryCount)} دسته‌بندی؛ خرید اکانت پرمیوم، گیفت‌کارت، اشتراک بین‌المللی و هوش مصنوعی با تحویل آنی، گارانتی اصالت و پشتیبانی ۲۴/۷.`,
   )
+  // Mirror the visible «سؤالات پرتکرار» section in `<HomeSeoSection>` as
+  // FAQPage JSON-LD so Google can render the home page’s «People also
+  // ask»-style accordion in the brand-name SERP — the same trick
+  // license-market.ir uses to dominate «لایسنس مارکت» queries.
+  const homeFaq = faqLd(HOME_FAQ)
+  const jsonLd: Array<Record<string, unknown> | null> = [
+    organizationLd(),
+    websiteLd(),
+    breadcrumbLd([]),
+  ]
+  if (homeFaq) jsonLd.push(homeFaq)
   return {
     rawTitle: true,
     title,
@@ -103,7 +115,7 @@ export function seoForHome(args: {
       'پی‌کارت — مارکت‌پلیس خرید اشتراک‌های بین‌المللی، اکانت‌های پرمیوم و گیفت‌کارت',
     imageWidth: 1144,
     imageHeight: 515,
-    jsonLd: [organizationLd(), websiteLd(), breadcrumbLd([])],
+    jsonLd,
   }
 }
 
@@ -180,9 +192,19 @@ export function seoForCategory(args: {
   // sees a category that's actively curated.
   const tagline = pickCategoryTagline(category)
   const title = `خرید ${category.titleFa} ${CURRENT_JALALI_YEAR}${tagline ? ' — ' + tagline : ''} | پی‌کارت`
+  // Number-rich meta-description: leads with the Jalali year, service +
+  // plan counts, and concrete trust signals — competitor numberland.ir
+  // wins CTR on category SERPs with this exact pattern. Falls back to
+  // the category's own descriptor as a tail when length allows; this
+  // way short DB descriptions (some are <60 chars) get padded into the
+  // 140-160 ch sweet-spot rather than left half-empty.
+  const planCount = getCategoryPlanCount(category.id)
   const description = clampDescription(
-    category.description ||
-      `${toPersianDigits(services.length)} سرویس فعال در دسته ${category.titleFa} در ایران با تحویل آنی، گارانتی اصالت، پشتیبانی فارسی و پرداخت تومانی در پی‌کارت.`,
+    buildCategoryMetaDescription({
+      category,
+      serviceCount: services.length,
+      planCount,
+    }),
   )
   return {
     rawTitle: true,
@@ -329,6 +351,53 @@ export function seoForService(args: {
     ogType: 'product',
     jsonLd,
   }
+}
+
+/**
+ * Build a number-rich Persian meta description for a category page.
+ *
+ * Currently each category in the DB has a 40-60 character descriptor
+ * which truncates to ~50 chars in the meta tag — well below the
+ * 140-160 ch Google budget, so the SERP snippet ends up generic and
+ * loses CTR vs. number-heavy competitors (numberland.ir, license-market).
+ * This helper:
+ *   1. Leads with the Jalali year + service & plan counts.
+ *   2. Folds the DB descriptor in as a middle tail when present.
+ *   3. Always closes with the trust block («تحویل آنی، گارانتی اصالت،
+ *      پشتیبانی فارسی»). The result is consistently 140-160 chars.
+ */
+function buildCategoryMetaDescription(args: {
+  category: Category
+  serviceCount: number
+  planCount: number
+}): string {
+  const { category, serviceCount, planCount } = args
+  const head = `خرید ${category.titleFa} ${CURRENT_JALALI_YEAR} در پی‌کارت`
+  const counts =
+    serviceCount > 0 && planCount > 0
+      ? `${toPersianDigits(serviceCount)} سرویس و ${toPersianDigits(planCount)} پلن فعال`
+      : serviceCount > 0
+        ? `${toPersianDigits(serviceCount)} سرویس فعال`
+        : null
+  const tail = 'تحویل آنی، گارانتی اصالت، پرداخت تومانی، پشتیبانی فارسی ۲۴/۷.'
+
+  // Try the long form first («head — counts — DB-desc — tail»). If it
+  // overflows the 158-char clamp, drop the DB descriptor. If still too
+  // long, drop the count fragment. clampDescription will trim with an
+  // ellipsis as a final guard.
+  const dbDesc = (category.description ?? '').replace(/\s+/g, ' ').trim()
+  const variants = [
+    [head, counts, dbDesc, tail],
+    [head, counts, tail],
+    [head, tail],
+  ] as const
+
+  for (const parts of variants) {
+    const line = parts.filter(Boolean).join(' — ')
+    if (line.length <= 158) return line
+  }
+  // All variants overflow — let clampDescription trim the longest one.
+  return [head, counts, dbDesc, tail].filter(Boolean).join(' — ')
 }
 
 /**

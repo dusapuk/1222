@@ -23,6 +23,7 @@ import {
 import { ProductCard } from '../components/ProductCard'
 import { CategoryCard } from '../components/CategoryCard'
 import { AppLink } from '../components/AppLink'
+import { HomeSeoSection } from '../components/HomeSeoSection'
 import { iconFor, colorForCategory, imageForCategory } from '../lib/icons'
 import { toPersianDigits } from '../lib/format'
 import { useSEO } from '../hooks/useSEO'
@@ -389,6 +390,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
           </div>
         </div>
       </section>
+
+      {/* Long-form SEO content («Cheر پی‌کارت» / 14 categories / FAQ) */}
+      <HomeSeoSection onNavigate={onNavigate} />
 
       {/* SEO/marketing strip */}
       <section className="max-w-7xl mx-auto px-4 py-4">
