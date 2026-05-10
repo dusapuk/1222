@@ -14,9 +14,35 @@ export const DEFAULT_LANG = 'fa'
 export const DEFAULT_TITLE = 'پی‌کارت | مارکت‌پلیس سرویس‌های دیجیتال'
 export const DEFAULT_DESCRIPTION =
   'خرید اشتراک‌های دیجیتال، اکانت‌های پرمیوم، گیفت‌کارت و سرویس‌های هوش مصنوعی با بهترین قیمت، تحویل آنی و ضمانت اصالت در پی‌کارت.'
-export const DEFAULT_OG_IMAGE = '/images/og/og-default.svg'
+/**
+ * 1200×630 PNG used by every social-preview unfurler when a route
+ * doesn't supply its own image. We deliberately use PNG (not SVG):
+ * Facebook, LinkedIn and Slack ignore SVG og:images entirely.
+ */
+export const DEFAULT_OG_IMAGE = '/images/og/og-default.png'
 
 export const TWITTER_HANDLE = '@pikart_ir'
+
+/**
+ * Public, human-readable contact details. These are surfaced both in the
+ * UI (header phone/email link, contact page) and in the Organization
+ * JSON-LD's `telephone` / `email` / `contactPoint` fields. The `_TEL`
+ * variant is the E.164 form `tel:` URLs and JSON-LD expect; the
+ * `_DISPLAY` variant uses Persian digits for the Header chip.
+ */
+export const CONTACT_PHONE_TEL = '+982191009200'
+export const CONTACT_PHONE_DISPLAY = '۰۲۱-۹۱۰۰۹۲۰۰'
+export const CONTACT_EMAIL = 'info@pikart.ir'
+/**
+ * Postal address used in the Organization JSON-LD `address` field.
+ * Currently a province-level address — once the legal registration is
+ * complete, replace with the registered street + postal code.
+ */
+export const CONTACT_ADDRESS = {
+  addressCountry: 'IR',
+  addressRegion: 'تهران',
+  addressLocality: 'تهران',
+}
 
 /**
  * Public social-media URLs the operator has chosen to publicly associate
@@ -25,8 +51,10 @@ export const TWITTER_HANDLE = '@pikart_ir'
  *     — Google can confirm "this is the same entity" across the web), and
  *   - to render the social-icon row in the Footer.
  *
- * Add real, public URLs here. Entries with an empty `url` are skipped
- * everywhere, so it's safe to leave them partially filled.
+ * Values are read from build-time env vars (`VITE_PIKART_INSTAGRAM`,
+ * `VITE_PIKART_TWITTER`, `VITE_PIKART_TELEGRAM`, `VITE_PIKART_WHATSAPP`)
+ * so the operator can fill them in via Vercel project settings without
+ * editing source. Entries with empty URLs are skipped everywhere.
  */
 export type SocialNetwork = 'instagram' | 'twitter' | 'telegram' | 'whatsapp'
 
@@ -38,12 +66,70 @@ export type SocialLink = {
   labelFa: string
 }
 
+/**
+ * Read a build-time env var, supporting both Vite (`import.meta.env`,
+ * substituted at client build time) and Node tsx (`process.env`, used by
+ * the prerender script). Either context returning a non-empty value
+ * wins, so the operator only has to set the var once in their build env.
+ */
+function readEnv(name: string): string {
+  const viteEnv = (import.meta as unknown as { env?: Record<string, string | undefined> }).env
+  const fromVite = viteEnv?.[name]
+  if (typeof fromVite === 'string' && fromVite.length > 0) return fromVite.trim()
+  const fromNode =
+    typeof process !== 'undefined' && process.env ? process.env[name] : undefined
+  if (typeof fromNode === 'string' && fromNode.length > 0) return fromNode.trim()
+  return ''
+}
+
+function socialUrlFromEnv(name: string): string {
+  return readEnv(name)
+}
+
 export const SOCIAL_LINKS: SocialLink[] = [
-  { network: 'instagram', url: '', labelFa: 'اینستاگرام پی‌کارت' },
-  { network: 'twitter', url: '', labelFa: 'توییتر پی‌کارت' },
-  { network: 'telegram', url: '', labelFa: 'کانال تلگرام پی‌کارت' },
-  { network: 'whatsapp', url: '', labelFa: 'واتس‌اپ پی‌کارت' },
+  {
+    network: 'instagram',
+    url: socialUrlFromEnv('VITE_PIKART_INSTAGRAM'),
+    labelFa: 'اینستاگرام پی‌کارت',
+  },
+  {
+    network: 'twitter',
+    url: socialUrlFromEnv('VITE_PIKART_TWITTER'),
+    labelFa: 'توییتر پی‌کارت',
+  },
+  {
+    network: 'telegram',
+    url: socialUrlFromEnv('VITE_PIKART_TELEGRAM'),
+    labelFa: 'کانال تلگرام پی‌کارت',
+  },
+  {
+    network: 'whatsapp',
+    url: socialUrlFromEnv('VITE_PIKART_WHATSAPP'),
+    labelFa: 'واتس‌اپ پی‌کارت',
+  },
 ]
+
+/**
+ * Search-engine site verification tokens. Each search engine asks you to
+ * paste a `<meta name="..." content="...">` into your homepage to confirm
+ * ownership before it shows you indexing data. We read all four from env
+ * so the operator can paste them once into Vercel without rebuilding the
+ * code.
+ */
+export type VerificationMeta = { name: string; content: string }
+const VERIFICATION_ENV_VARS: { name: string; envVar: string }[] = [
+  { name: 'google-site-verification', envVar: 'VITE_GOOGLE_SITE_VERIFICATION' },
+  { name: 'yandex-verification', envVar: 'VITE_YANDEX_VERIFICATION' },
+  { name: 'msvalidate.01', envVar: 'VITE_BING_VERIFICATION' },
+]
+
+/** Returns only the verification metas that actually have a token configured. */
+export function getVerificationMetas(): VerificationMeta[] {
+  return VERIFICATION_ENV_VARS.flatMap(({ name, envVar }) => {
+    const content = readEnv(envVar)
+    return content ? [{ name, content }] : []
+  })
+}
 
 /**
  * E-Namad (نماد اعتماد الکترونیکی) embed code provided by enamad.ir
@@ -56,7 +142,7 @@ export const SOCIAL_LINKS: SocialLink[] = [
  * contains the unique merchant id) into ENAMAD_IFRAME_HTML to switch
  * the placeholder for the real seal.
  */
-export const ENAMAD_IFRAME_HTML = ''
+export const ENAMAD_IFRAME_HTML = readEnv('VITE_ENAMAD_IFRAME_HTML')
 
 /**
  * Build an absolute URL from an in-app path. Empty / undefined returns the site root.

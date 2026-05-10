@@ -29,9 +29,9 @@
       content="خرید اشتراک‌های دیجیتال، اکانت‌های پرمیوم، گیفت‌کارت و سرویس‌های هوش مصنوعی با بهترین قیمت، تحویل آنی و ضمانت اصالت در پی‌کارت."
     />
     <meta property="og:url" content="https://pikart.ir/" />
-    <meta property="og:image" content="https://pikart.ir/images/og/og-default.svg" />
-    <meta property="og:image:secure_url" content="https://pikart.ir/images/og/og-default.svg" />
-    <meta property="og:image:type" content="image/svg+xml" />
+    <meta property="og:image" content="https://pikart.ir/images/og/og-default.png" />
+    <meta property="og:image:secure_url" content="https://pikart.ir/images/og/og-default.png" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="پی‌کارت — مارکت‌پلیس سرویس‌های دیجیتال" />
@@ -43,7 +43,7 @@
       name="twitter:description"
       content="خرید اشتراک‌های دیجیتال، اکانت‌های پرمیوم، گیفت‌کارت و سرویس‌های هوش مصنوعی با بهترین قیمت، تحویل آنی و ضمانت اصالت در پی‌کارت."
     />
-    <meta name="twitter:image" content="https://pikart.ir/images/og/og-default.svg" />
+    <meta name="twitter:image" content="https://pikart.ir/images/og/og-default.png" />
     <meta name="twitter:image:alt" content="پی‌کارت — مارکت‌پلیس سرویس‌های دیجیتال" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -145,8 +145,14 @@
       }
     </style>
     <noscript>
+      <!-- This block is rendered ONLY when the visitor has JavaScript
+           disabled. We deliberately use <p>/<strong> here instead of
+           <h1> so the page never has two <h1> elements in the DOM (the
+           SSR-rendered React tree above already provides one). -->
       <div style="font-family: 'Vazirmatn', system-ui, sans-serif; padding: 24px; text-align: center; color: #c4c5d0; background: #0b0c10;">
-        <h1>پی‌کارت | مارکت‌پلیس سرویس‌های دیجیتال</h1>
+        <p style="font-size: 24px; font-weight: 900; color: #ffffff; margin: 0 0 8px;">
+          پی‌کارت — مارکت‌پلیس سرویس‌های دیجیتال
+        </p>
         <p>برای استفاده از پی‌کارت، لطفاً جاوااسکریپت مرورگر خود را فعال کنید.</p>
         <p>
           <a href="/sitemap.xml" style="color: #d4a853;">نقشه سایت</a> ·

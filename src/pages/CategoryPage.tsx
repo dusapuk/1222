@@ -99,6 +99,18 @@ export function CategoryPage({
   const safePage = Math.min(page, pageCount)
   const visible = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
+  // Active-filter detection: if any filter is non-default, the URL is a
+  // duplicate-content variant of the bare category page and must be
+  // noindex'd so it doesn't compete with the canonical.
+  const hasFilters =
+    filter.query.trim().length > 0 ||
+    filter.minPrice != null ||
+    filter.maxPrice != null ||
+    filter.inStockOnly ||
+    filter.discountedOnly ||
+    filter.aiOnly ||
+    filter.popularOnly
+
   useSEO(
     category
       ? seoForCategory({
@@ -107,6 +119,7 @@ export function CategoryPage({
           categoryImage: imageForCategory(slug),
           page: safePage,
           pageCount,
+          hasFilters,
         })
       : seoForCategoryNotFound(slug),
   )
@@ -115,13 +128,17 @@ export function CategoryPage({
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
         <h1 className="text-2xl font-black text-white mb-3">دسته‌بندی پیدا نشد</h1>
-        <button
-          type="button"
-          onClick={() => onNavigate('/categories')}
+        <a
+          href="/categories"
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+            e.preventDefault()
+            onNavigate('/categories')
+          }}
           className="text-[#d4a853] hover:underline"
         >
           مشاهده همه دسته‌بندی‌ها
-        </button>
+        </a>
       </div>
     )
   }
@@ -139,6 +156,12 @@ export function CategoryPage({
         ]}
         onNavigate={onNavigate}
       />
+
+      {/* Single canonical <h1> for the page — hidden visually because the
+          two responsive hero-card layouts below render their own styled
+          headline copies (as <p> nodes for SR/SEO clarity), but the h1
+          must appear exactly once in the DOM for search engines. */}
+      <h1 className="sr-only">خرید {category.titleFa}</h1>
 
       <header className="relative mt-5 mb-6 overflow-hidden rounded-2xl ring-1 ring-[#1e1f2a] bg-[#0e0f15]">
         {/* Mobile: full-bleed banner with overlay text (image keeps its native aspect) */}
@@ -179,9 +202,12 @@ export function CategoryPage({
                     {category.titleEn}
                   </span>
                 )}
-                <h1 className="text-2xl font-black leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+                <p
+                  aria-hidden="true"
+                  className="text-2xl font-black leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] m-0"
+                >
                   خرید {category.titleFa}
-                </h1>
+                </p>
                 <p className="mt-1 line-clamp-1 text-xs text-white/70">
                   {category.description ?? `${toPersianDigits(all.length)} سرویس`}
                 </p>
@@ -231,9 +257,12 @@ export function CategoryPage({
                     {category.titleEn}
                   </span>
                 )}
-                <h1 className="text-2xl font-black leading-tight text-white md:text-3xl">
+                <p
+                  aria-hidden="true"
+                  className="text-2xl font-black leading-tight text-white md:text-3xl m-0"
+                >
                   خرید {category.titleFa}
-                </h1>
+                </p>
                 <p className="mt-1 line-clamp-2 text-xs text-white/70">
                   {category.description ?? `${toPersianDigits(all.length)} سرویس`}
                 </p>
@@ -340,7 +369,7 @@ export function CategoryPage({
                   <ProductCard
                     key={s.id}
                     service={s}
-                    onClick={() => onNavigate('/s/' + s.slug)}
+                    onNavigate={onNavigate}
                   />
                 ))}
               </div>

@@ -1,5 +1,6 @@
 import { useSEO } from '../hooks/useSEO'
 import { seoForNotFound } from '../lib/seoConfig'
+import { AppLink } from '../components/AppLink'
 
 export type NotFoundPageProps = {
   onNavigate: (path: string, params?: Record<string, string | number | null | undefined>) => void
@@ -19,20 +20,20 @@ export function NotFoundPage({ onNavigate }: NotFoundPageProps) {
         یا از دسته‌بندی‌ها سرویس مورد نظر خود را پیدا کنید.
       </p>
       <div className="flex items-center justify-center gap-3">
-        <button
-          type="button"
-          onClick={() => onNavigate('/')}
-          className="bg-[#d4a853] hover:bg-[#c49a48] text-[#0b0c10] font-bold px-6 py-3 rounded-xl text-sm transition-colors"
+        <AppLink
+          href="/"
+          onNavigate={onNavigate}
+          className="bg-[#d4a853] hover:bg-[#c49a48] text-[#0b0c10] font-bold px-6 py-3 rounded-xl text-sm transition-colors no-underline"
         >
           خانه
-        </button>
-        <button
-          type="button"
-          onClick={() => onNavigate('/categories')}
-          className="border border-[#2a2b35] hover:border-[#d4a853] text-[#c4c5d0] hover:text-white px-6 py-3 rounded-xl text-sm transition-all"
+        </AppLink>
+        <AppLink
+          href="/categories"
+          onNavigate={onNavigate}
+          className="border border-[#2a2b35] hover:border-[#d4a853] text-[#c4c5d0] hover:text-white px-6 py-3 rounded-xl text-sm transition-all no-underline"
         >
           مشاهده دسته‌بندی‌ها
-        </button>
+        </AppLink>
       </div>
     </div>
   )

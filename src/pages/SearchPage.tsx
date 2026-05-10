@@ -12,6 +12,7 @@ import { ProductCard } from '../components/ProductCard'
 import { SortSelect } from '../components/SortSelect'
 import { Pagination } from '../components/Pagination'
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { AppLink } from '../components/AppLink'
 import { toPersianDigits } from '../lib/format'
 import { useSEO } from '../hooks/useSEO'
 import { seoForSearch } from '../lib/seoConfig'
@@ -110,13 +111,13 @@ export function SearchPage({
           <p className="text-sm text-[#8a8b96] max-w-sm">
             با کلمات کلیدی متفاوت جستجو کنید یا یکی از دسته‌بندی‌ها را مرور کنید.
           </p>
-          <button
-            type="button"
-            onClick={() => onNavigate('/categories')}
-            className="mt-4 bg-[#d4a853] hover:bg-[#c49a48] text-[#0b0c10] text-sm font-bold px-5 py-2.5 rounded-xl transition-colors"
+          <AppLink
+            href="/categories"
+            onNavigate={onNavigate}
+            className="mt-4 bg-[#d4a853] hover:bg-[#c49a48] text-[#0b0c10] text-sm font-bold px-5 py-2.5 rounded-xl transition-colors no-underline"
           >
             مشاهده دسته‌بندی‌ها
-          </button>
+          </AppLink>
         </div>
       ) : (
         <>
@@ -125,7 +126,7 @@ export function SearchPage({
               <ProductCard
                 key={s.id}
                 service={s}
-                onClick={() => onNavigate('/s/' + s.slug)}
+                onNavigate={onNavigate}
               />
             ))}
           </div>

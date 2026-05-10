@@ -10,6 +10,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { categories } from '../lib/data'
 import { ENAMAD_IFRAME_HTML, SOCIAL_LINKS, type SocialNetwork } from '../lib/seo'
+import { AppLink } from './AppLink'
 
 const supportLinks: { label: string; path: string }[] = [
   { label: 'سوالات متداول', path: '/faq' },
@@ -22,7 +23,6 @@ const supportLinks: { label: string; path: string }[] = [
 const legalLinks: { label: string; path: string }[] = [
   { label: 'قوانین و مقررات', path: '/terms' },
   { label: 'حریم خصوصی', path: '/privacy' },
-  { label: 'شرایط استفاده', path: '/terms' },
 ]
 
 const socialIcon: Record<SocialNetwork, LucideIcon> = {
@@ -45,10 +45,11 @@ export function Footer({ onNavigate }: FooterProps) {
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="grid grid-cols-2 md:grid-cols-12 gap-8 mb-10">
           <div className="col-span-2 md:col-span-4">
-            <button
-              type="button"
-              onClick={() => onNavigate('/')}
-              className="flex items-center gap-3 mb-4"
+            <AppLink
+              href="/"
+              onNavigate={onNavigate}
+              aria-label="پی‌کارت — صفحه اصلی"
+              className="flex items-center gap-3 mb-4 no-underline text-inherit"
             >
               <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center font-black text-lg"
@@ -60,7 +61,7 @@ export function Footer({ onNavigate }: FooterProps) {
                 <span className="font-extrabold text-lg text-white">پی‌کارت</span>
                 <span className="block text-[10px] text-[#6b6c78] -mt-0.5">PIKART.IR</span>
               </div>
-            </button>
+            </AppLink>
             <p className="text-sm text-[#6b6c78] leading-7 mb-4 max-w-sm">
               پی‌کارت، بزرگ‌ترین مارکت‌پلیس خرید گیفت کارت و اشتراک سرویس‌های بین‌المللی در ایران. تحویل آنی، ضمانت اصالت و پشتیبانی ۲۴ ساعته.
             </p>
@@ -90,13 +91,13 @@ export function Footer({ onNavigate }: FooterProps) {
             <ul className="space-y-2.5">
               {categories.slice(0, 6).map((c) => (
                 <li key={c.id}>
-                  <button
-                    type="button"
-                    onClick={() => onNavigate('/c/' + c.slug)}
-                    className="text-sm text-[#6b6c78] hover:text-[#d4a853] transition-colors text-right"
+                  <AppLink
+                    href={'/c/' + c.slug}
+                    onNavigate={onNavigate}
+                    className="text-sm text-[#6b6c78] hover:text-[#d4a853] transition-colors text-right no-underline"
                   >
                     {c.titleFa}
-                  </button>
+                  </AppLink>
                 </li>
               ))}
             </ul>
@@ -107,13 +108,13 @@ export function Footer({ onNavigate }: FooterProps) {
             <ul className="space-y-2.5">
               {supportLinks.map((link) => (
                 <li key={link.path}>
-                  <button
-                    type="button"
-                    onClick={() => onNavigate(link.path)}
-                    className="text-sm text-[#6b6c78] hover:text-[#d4a853] transition-colors text-right"
+                  <AppLink
+                    href={link.path}
+                    onNavigate={onNavigate}
+                    className="text-sm text-[#6b6c78] hover:text-[#d4a853] transition-colors text-right no-underline"
                   >
                     {link.label}
-                  </button>
+                  </AppLink>
                 </li>
               ))}
             </ul>
@@ -183,13 +184,13 @@ export function Footer({ onNavigate }: FooterProps) {
             <ul className="space-y-2 text-xs text-[#6b6c78]">
               {legalLinks.map((link) => (
                 <li key={link.label}>
-                  <button
-                    type="button"
-                    onClick={() => onNavigate(link.path)}
-                    className="hover:text-[#d4a853] transition-colors text-right"
+                  <AppLink
+                    href={link.path}
+                    onNavigate={onNavigate}
+                    className="hover:text-[#d4a853] transition-colors text-right no-underline"
                   >
                     {link.label}
-                  </button>
+                  </AppLink>
                 </li>
               ))}
             </ul>

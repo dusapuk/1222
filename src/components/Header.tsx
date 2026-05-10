@@ -10,8 +10,10 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import { SearchBox } from './SearchBox'
+import { AppLink } from './AppLink'
 import { categories } from '../lib/data'
 import { iconFor, colorForCategory } from '../lib/icons'
+import { CONTACT_EMAIL, CONTACT_PHONE_DISPLAY, CONTACT_PHONE_TEL } from '../lib/seo'
 
 export type HeaderProps = {
   onNavigate: (path: string, params?: Record<string, string | number | null | undefined>) => void
@@ -22,14 +24,22 @@ function TopBar() {
     <div className="bg-[#101118] border-b border-[#1e1f2a]">
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-9 text-xs text-[#8a8b96]">
         <div className="flex items-center gap-5">
-          <span className="hidden sm:flex items-center gap-1.5">
+          <a
+            href={`tel:${CONTACT_PHONE_TEL}`}
+            className="hidden sm:flex items-center gap-1.5 hover:text-white transition-colors"
+            aria-label={`تماس با پی‌کارت ${CONTACT_PHONE_DISPLAY}`}
+          >
             <Phone size={12} />
-            ۰۲۱-۹۱۰۰۹۲۰۰
-          </span>
-          <span className="hidden md:flex items-center gap-1.5">
+            {CONTACT_PHONE_DISPLAY}
+          </a>
+          <a
+            href={`mailto:${CONTACT_EMAIL}`}
+            className="hidden md:flex items-center gap-1.5 hover:text-white transition-colors"
+            aria-label={`ایمیل پشتیبانی ${CONTACT_EMAIL}`}
+          >
             <Mail size={12} />
-            info@pikart.ir
-          </span>
+            {CONTACT_EMAIL}
+          </a>
         </div>
         <div className="flex items-center gap-4">
           <span className="hidden md:flex items-center gap-1.5">
@@ -64,10 +74,11 @@ export function Header({ onNavigate }: HeaderProps) {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16 gap-3">
             {/* logo */}
-            <button
-              type="button"
-              onClick={() => onNavigate('/')}
-              className="flex items-center gap-3 shrink-0"
+            <AppLink
+              href="/"
+              onNavigate={onNavigate}
+              aria-label="پی‌کارت — صفحه اصلی"
+              className="flex items-center gap-3 shrink-0 no-underline text-inherit"
             >
               <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center font-black text-lg"
@@ -79,7 +90,7 @@ export function Header({ onNavigate }: HeaderProps) {
                 <span className="font-extrabold text-lg text-white tracking-tight">پی‌کارت</span>
                 <span className="block text-[10px] text-[#6b6c78] -mt-0.5">PIKART.IR</span>
               </div>
-            </button>
+            </AppLink>
 
             {/* search */}
             <div className="hidden md:flex flex-1 max-w-xl mx-2">
@@ -88,13 +99,13 @@ export function Header({ onNavigate }: HeaderProps) {
 
             {/* actions */}
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => onNavigate('/categories')}
-                className="hidden lg:flex items-center gap-2 text-sm text-[#c4c5d0] hover:text-[#d4a853] transition-colors px-3 h-10"
+              <AppLink
+                href="/categories"
+                onNavigate={onNavigate}
+                className="hidden lg:flex items-center gap-2 text-sm text-[#c4c5d0] hover:text-[#d4a853] transition-colors px-3 h-10 no-underline"
               >
                 دسته‌بندی‌ها
-              </button>
+              </AppLink>
               <button
                 type="button"
                 className="relative p-2.5 rounded-lg hover:bg-[#16171f] transition-colors group"
@@ -141,25 +152,25 @@ export function Header({ onNavigate }: HeaderProps) {
                 const Icon = iconFor(c.icon)
                 const color = colorForCategory(c.slug)
                 return (
-                  <button
+                  <AppLink
                     key={c.id}
-                    type="button"
-                    onClick={() => onNavigate('/c/' + c.slug)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[#9a9baa] hover:text-white hover:bg-[#16171f] transition-all whitespace-nowrap shrink-0"
+                    href={'/c/' + c.slug}
+                    onNavigate={onNavigate}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[#9a9baa] hover:text-white hover:bg-[#16171f] transition-all whitespace-nowrap shrink-0 no-underline"
                   >
                     <Icon size={15} style={{ color }} />
                     {c.titleFa}
-                  </button>
+                  </AppLink>
                 )
               })}
-              <button
-                type="button"
-                onClick={() => onNavigate('/categories')}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-[#d4a853] hover:bg-[#1a1716] transition-all whitespace-nowrap shrink-0 font-medium"
+              <AppLink
+                href="/categories"
+                onNavigate={onNavigate}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-[#d4a853] hover:bg-[#1a1716] transition-all whitespace-nowrap shrink-0 font-medium no-underline"
               >
                 همه دسته‌ها
                 <ChevronDown size={13} />
-              </button>
+              </AppLink>
             </div>
           </div>
         </div>
@@ -180,26 +191,22 @@ export function Header({ onNavigate }: HeaderProps) {
                 <X size={18} />
               </button>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                onNavigate('/')
-                setMobileMenu(false)
-              }}
-              className="w-full text-right px-3 py-3 rounded-lg text-sm text-white hover:bg-[#16171f]"
+            <AppLink
+              href="/"
+              onNavigate={onNavigate}
+              onClick={() => setMobileMenu(false)}
+              className="block w-full text-right px-3 py-3 rounded-lg text-sm text-white hover:bg-[#16171f] no-underline"
             >
               صفحه اصلی
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onNavigate('/categories')
-                setMobileMenu(false)
-              }}
-              className="w-full text-right px-3 py-3 rounded-lg text-sm text-white hover:bg-[#16171f]"
+            </AppLink>
+            <AppLink
+              href="/categories"
+              onNavigate={onNavigate}
+              onClick={() => setMobileMenu(false)}
+              className="block w-full text-right px-3 py-3 rounded-lg text-sm text-white hover:bg-[#16171f] no-underline"
             >
               همه دسته‌بندی‌ها
-            </button>
+            </AppLink>
             <button
               type="button"
               onClick={() => setAllCatsOpen((s) => !s)}
@@ -217,14 +224,12 @@ export function Header({ onNavigate }: HeaderProps) {
                   const Icon = iconFor(c.icon)
                   const color = colorForCategory(c.slug)
                   return (
-                    <button
+                    <AppLink
                       key={c.id}
-                      type="button"
-                      onClick={() => {
-                        onNavigate('/c/' + c.slug)
-                        setMobileMenu(false)
-                      }}
-                      className="flex items-center gap-2 bg-[#13141a] border border-[#1e1f2a] hover:border-[#d4a853]/40 rounded-xl p-3 text-right transition-colors"
+                      href={'/c/' + c.slug}
+                      onNavigate={onNavigate}
+                      onClick={() => setMobileMenu(false)}
+                      className="flex items-center gap-2 bg-[#13141a] border border-[#1e1f2a] hover:border-[#d4a853]/40 rounded-xl p-3 text-right transition-colors no-underline text-inherit"
                     >
                       <div
                         className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
@@ -233,7 +238,7 @@ export function Header({ onNavigate }: HeaderProps) {
                         <Icon size={14} style={{ color }} />
                       </div>
                       <span className="text-xs text-white truncate">{c.titleFa}</span>
-                    </button>
+                    </AppLink>
                   )
                 })}
               </div>

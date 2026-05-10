@@ -53,7 +53,7 @@ export function CategoriesPage({ onNavigate }: CategoriesPageProps) {
             key={c.id}
             category={c}
             count={getCategoryServiceCount(c.id)}
-            onClick={(slug) => onNavigate('/c/' + slug)}
+            onNavigate={onNavigate}
           />
         ))}
       </section>
@@ -71,7 +71,7 @@ export function CategoriesPage({ onNavigate }: CategoriesPageProps) {
               <ProductCard
                 key={s.id}
                 service={s}
-                onClick={() => onNavigate('/s/' + s.slug)}
+                onNavigate={onNavigate}
               />
             ))}
           </div>

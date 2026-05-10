@@ -22,6 +22,7 @@ import {
 } from '../lib/data'
 import { ProductCard } from '../components/ProductCard'
 import { CategoryCard } from '../components/CategoryCard'
+import { AppLink } from '../components/AppLink'
 import { iconFor, colorForCategory, imageForCategory } from '../lib/icons'
 import { toPersianDigits } from '../lib/format'
 import { useSEO } from '../hooks/useSEO'
@@ -49,10 +50,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
       {/* hero */}
       <section className="max-w-7xl mx-auto px-4 pt-6 pb-2">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+          {/* Hero card. The whole card is no longer a link \u2014 the inner CTA
+              buttons are individual <a> links for SEO/anchor-text, and
+              wrapping the entire card in another <a> would create nested
+              anchors (invalid HTML, browsers strip them). */}
           <div
-            className="lg:col-span-7 relative rounded-2xl overflow-hidden group cursor-pointer ring-1 ring-[#1e1f2a]"
+            className="lg:col-span-7 relative rounded-2xl overflow-hidden group ring-1 ring-[#1e1f2a]"
             style={{ minHeight: 320 }}
-            onClick={() => onNavigate('/categories')}
           >
             <img
               src="/images/home/hero-premium.jpg"
@@ -98,28 +102,22 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </p>
               </div>
               <div className="flex items-center gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onNavigate('/categories')
-                  }}
-                  className="bg-[#d4a853] hover:bg-[#c49a48] text-[#0b0c10] font-bold px-6 py-3 rounded-xl text-sm transition-colors flex items-center gap-2"
+                <AppLink
+                  href="/categories"
+                  onNavigate={onNavigate}
+                  className="bg-[#d4a853] hover:bg-[#c49a48] text-[#0b0c10] font-bold px-6 py-3 rounded-xl text-sm transition-colors flex items-center gap-2 no-underline"
                 >
                   مشاهده دسته‌بندی‌ها
                   <ArrowLeft size={14} />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onNavigate('/c/ai-assistants')
-                  }}
-                  className="border border-[#2a2b35] hover:border-[#d4a853] text-[#c4c5d0] hover:text-white px-6 py-3 rounded-xl text-sm transition-all flex items-center gap-2"
+                </AppLink>
+                <AppLink
+                  href="/c/ai-assistants"
+                  onNavigate={onNavigate}
+                  className="border border-[#2a2b35] hover:border-[#d4a853] text-[#c4c5d0] hover:text-white px-6 py-3 rounded-xl text-sm transition-all flex items-center gap-2 no-underline"
                 >
                   <Sparkles size={14} />
                   هوش مصنوعی
-                </button>
+                </AppLink>
               </div>
             </div>
           </div>
@@ -131,11 +129,12 @@ export function HomePage({ onNavigate }: HomePageProps) {
               const image = imageForCategory(c.slug)
               const wide = idx === 3
               return (
-                <button
+                <AppLink
                   key={c.id}
-                  type="button"
-                  onClick={() => onNavigate('/c/' + c.slug)}
-                  className={`group relative cursor-pointer overflow-hidden rounded-2xl text-right ring-1 ring-[#1e1f2a] transition-all hover:ring-[#d4a853]/40 ${
+                  href={'/c/' + c.slug}
+                  onNavigate={onNavigate}
+                  aria-label={`خرید ${c.titleFa}`}
+                  className={`group relative cursor-pointer overflow-hidden rounded-2xl text-right ring-1 ring-[#1e1f2a] transition-all hover:ring-[#d4a853]/40 block no-underline text-inherit ${
                     wide ? 'col-span-2' : ''
                   }`}
                   style={{ minHeight: wide ? 110 : 155 }}
@@ -188,7 +187,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                       </span>
                     </div>
                   </div>
-                </button>
+                </AppLink>
               )
             })}
           </div>
@@ -253,18 +252,19 @@ export function HomePage({ onNavigate }: HomePageProps) {
               داغ
             </span>
           </div>
-          <button
-            type="button"
-            onClick={() => onNavigate('/search', { q: '', sort: 'discount' })}
-            className="flex items-center gap-1 text-sm text-[#d4a853] hover:text-[#c49a48] transition-colors font-medium"
+          <AppLink
+            href="/search"
+            params={{ sort: 'discount' }}
+            onNavigate={onNavigate}
+            className="flex items-center gap-1 text-sm text-[#d4a853] hover:text-[#c49a48] transition-colors font-medium no-underline"
           >
             مشاهده همه
             <ChevronLeft size={16} />
-          </button>
+          </AppLink>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {featured.map((s) => (
-            <ProductCard key={s.id} service={s} onClick={() => onNavigate('/s/' + s.slug)} />
+            <ProductCard key={s.id} service={s} onNavigate={onNavigate} />
           ))}
         </div>
       </section>
@@ -276,14 +276,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <span className="w-1 h-6 bg-[#9b5de5] rounded-full" />
             <h2 className="text-xl font-black text-white">دسته‌بندی سرویس‌ها</h2>
           </div>
-          <button
-            type="button"
-            onClick={() => onNavigate('/categories')}
-            className="flex items-center gap-1 text-sm text-[#d4a853] hover:text-[#c49a48] transition-colors font-medium"
+          <AppLink
+            href="/categories"
+            onNavigate={onNavigate}
+            className="flex items-center gap-1 text-sm text-[#d4a853] hover:text-[#c49a48] transition-colors font-medium no-underline"
           >
             همه دسته‌بندی‌ها
             <ChevronLeft size={16} />
-          </button>
+          </AppLink>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {categories.slice(0, 8).map((c) => (
@@ -291,7 +291,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
               key={c.id}
               category={c}
               count={getCategoryServiceCount(c.id)}
-              onClick={(slug) => onNavigate('/c/' + slug)}
+              onNavigate={onNavigate}
             />
           ))}
         </div>
@@ -308,18 +308,19 @@ export function HomePage({ onNavigate }: HomePageProps) {
               پرفروش
             </span>
           </div>
-          <button
-            type="button"
-            onClick={() => onNavigate('/search', { q: '', sort: 'popular' })}
-            className="flex items-center gap-1 text-sm text-[#d4a853] hover:text-[#c49a48] transition-colors font-medium"
+          <AppLink
+            href="/search"
+            params={{ sort: 'popular' }}
+            onNavigate={onNavigate}
+            className="flex items-center gap-1 text-sm text-[#d4a853] hover:text-[#c49a48] transition-colors font-medium no-underline"
           >
             مشاهده همه
             <ChevronLeft size={16} />
-          </button>
+          </AppLink>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {popular.map((s) => (
-            <ProductCard key={s.id} service={s} onClick={() => onNavigate('/s/' + s.slug)} />
+            <ProductCard key={s.id} service={s} onNavigate={onNavigate} />
           ))}
         </div>
       </section>

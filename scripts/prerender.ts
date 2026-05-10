@@ -49,6 +49,7 @@ import {
   SITE_NAME,
   TWITTER_HANDLE,
   absoluteUrl,
+  getVerificationMetas,
   imageMimeFor,
 } from '../src/lib/seo'
 import type { SEOConfig } from '../src/hooks/useSEO'
@@ -304,6 +305,16 @@ function buildHead(seo: SEOConfig): {
 
   if (seo.linkRelPrev) tags.push(linkTag('prev', seo.linkRelPrev))
   if (seo.linkRelNext) tags.push(linkTag('next', seo.linkRelNext))
+
+  // Search engine site verification — Google Search Console / Yandex
+  // Webmaster / Bing Webmaster ask for a per-property `<meta>` token to
+  // confirm ownership before they expose indexing dashboards. We emit
+  // these on every page (it's cheap, and putting them only on `/` means
+  // re-verification fails on `*.vercel.app` previews where the home
+  // template might not be rendered).
+  for (const v of getVerificationMetas()) {
+    tags.push(metaTag('name', v.name, v.content))
+  }
 
   // Per-page LCP image preload — for product pages the hero is the
   // service logo, which is also the og:image. Preloading it lets the

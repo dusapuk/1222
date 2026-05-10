@@ -2,23 +2,26 @@ import { ChevronLeft } from 'lucide-react'
 import type { Category } from '../lib/data'
 import { iconFor, colorForCategory, imageForCategory } from '../lib/icons'
 import { toPersianDigits } from '../lib/format'
+import { AppLink } from './AppLink'
 
 export type CategoryCardProps = {
   category: Category
   count: number
-  onClick?: (slug: string) => void
+  onNavigate: (path: string, params?: Record<string, string | number | null | undefined>) => void
 }
 
-export function CategoryCard({ category, count, onClick }: CategoryCardProps) {
+export function CategoryCard({ category, count, onNavigate }: CategoryCardProps) {
   const Icon = iconFor(category.icon)
   const color = colorForCategory(category.slug)
   const image = imageForCategory(category.slug)
+  const href = '/c/' + category.slug
 
   return (
-    <button
-      type="button"
-      onClick={() => onClick?.(category.slug)}
-      className="group relative block w-full overflow-hidden rounded-2xl bg-[#0e0f15] text-right transition-all focus:outline-none focus:ring-2 focus:ring-[#d4a853]/50"
+    <AppLink
+      href={href}
+      onNavigate={onNavigate}
+      aria-label={`خرید ${category.titleFa} — ${toPersianDigits(count)} سرویس`}
+      className="group relative block w-full overflow-hidden rounded-2xl bg-[#0e0f15] text-right transition-all focus:outline-none focus:ring-2 focus:ring-[#d4a853]/50 no-underline text-inherit"
       style={{
         aspectRatio: '5 / 4',
         boxShadow: `0 1px 0 0 ${color}22, 0 0 0 1px #1e1f2a`,
@@ -107,6 +110,6 @@ export function CategoryCard({ category, count, onClick }: CategoryCardProps) {
           </span>
         </div>
       </div>
-    </button>
+    </AppLink>
   )
 }
