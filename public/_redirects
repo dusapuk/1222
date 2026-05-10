@@ -1,0 +1,4 @@
+# Netlify / Cloudflare Pages SPA fallback. Send every unknown path to
+# index.html so the React router can render the requested route. The
+# /index.html line keeps direct hits to / working.
+/*    /index.html   200

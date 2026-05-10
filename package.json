@@ -1,0 +1,52 @@
+{
+  "name": "1222",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "prebuild": "tsx scripts/generate-sitemap.ts && tsx scripts/generate-rss.ts && tsx scripts/enrich-marketplace.ts && tsx scripts/generate-og-images.ts && tsx scripts/generate-blog-og-images.ts",
+    "build:client": "vite build",
+    "build:ssr": "vite build --ssr src/entry-server.tsx --outDir dist-ssr --emptyOutDir",
+    "build": "tsc -b && npm run build:client && npm run build:ssr && tsx scripts/prerender.ts",
+    "predev": "tsx scripts/generate-sitemap.ts && tsx scripts/generate-rss.ts && tsx scripts/enrich-marketplace.ts",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "sitemap": "tsx scripts/generate-sitemap.ts",
+    "rss": "tsx scripts/generate-rss.ts",
+    "enrich": "tsx scripts/enrich-marketplace.ts",
+    "prerender": "tsx scripts/prerender.ts",
+    "audit:product": "tsx scripts/audit-product-jsonld.ts",
+    "og:images": "tsx scripts/generate-og-images.ts",
+    "og:blog": "tsx scripts/generate-blog-og-images.ts"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.364.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.12.4",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "@types/node": "^25.6.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.15.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.14",
+    "globals": "^15.12.0",
+    "postcss": "^8.4.49",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^3.4.16",
+    "tsx": "^4.21.0",
+    "typescript": "~5.6.2",
+    "typescript-eslint": "^8.15.0",
+    "vite": "^6.0.1"
+  }
+}

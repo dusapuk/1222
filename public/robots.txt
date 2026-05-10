@@ -1,0 +1,61 @@
+User-agent: *
+Allow: /
+# Explicitly allow the blog and RSS feed (some over-zealous robots
+# config inheritance treats unfamiliar paths as disallowed by default).
+Allow: /blog
+Allow: /blog/
+Allow: /rss.xml
+
+# Internal site search results — duplicate, low-quality content. The
+# /search page is also tagged noindex via meta robots, but we disallow
+# crawling here to save crawl budget too.
+Disallow: /search
+Disallow: /search?
+Disallow: /*?q=
+Disallow: /404
+
+# Faceted-filter URLs on category pages. They produce thin, near-
+# duplicate variants of the canonical /c/<slug> page; we already mark
+# them noindex client-side, but disallowing them in robots stops Google
+# from spending crawl budget fetching them in the first place.
+Disallow: /*?stock=
+Disallow: /*?disc=
+Disallow: /*?ai=
+Disallow: /*?pop=
+Disallow: /*?min=
+Disallow: /*?max=
+Disallow: /*?sort=
+# Allow ?page= explicitly: paginated category URLs ARE canonicalised
+# back to /c/<slug>?page=N (they have rel=next/prev too) so we want
+# Google to crawl them.
+
+# Block tracking-only query params that 3rd parties append (UTM,
+# Google Click ID, Facebook Click ID) so Google doesn't treat them as
+# distinct URLs.
+Disallow: /*?utm_
+Disallow: /*&utm_
+Disallow: /*?gclid=
+Disallow: /*?fbclid=
+
+# Common LLM/AI training crawlers — opt-out per the publisher's
+# default expectation. Remove individual entries here if you want to
+# allow training on the catalogue.
+User-agent: GPTBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+Sitemap: https://pikart.ir/sitemap.xml

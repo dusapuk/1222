@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="fa-IR" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0c10" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!--
+      Default SEO meta. Per-page values are overwritten at runtime by the
+      `useSEO` hook (see src/hooks/useSEO.ts). Keeping safe defaults here
+      means social bots that don't execute JS still see something useful.
+    -->
+    <title>پی‌کارت | مارکت‌پلیس سرویس‌های دیجیتال</title>
+    <meta
+      name="description"
+      content="خرید اشتراک‌های دیجیتال، اکانت‌های پرمیوم، گیفت‌کارت و سرویس‌های هوش مصنوعی با بهترین قیمت، تحویل آنی و ضمانت اصالت در پی‌کارت."
+    />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <link rel="canonical" href="https://pikart.ir/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="پی‌کارت" />
+    <meta property="og:locale" content="fa_IR" />
+    <meta property="og:title" content="پی‌کارت | مارکت‌پلیس سرویس‌های دیجیتال" />
+    <meta
+      property="og:description"
+      content="خرید اشتراک‌های دیجیتال، اکانت‌های پرمیوم، گیفت‌کارت و سرویس‌های هوش مصنوعی با بهترین قیمت، تحویل آنی و ضمانت اصالت در پی‌کارت."
+    />
+    <meta property="og:url" content="https://pikart.ir/" />
+    <meta property="og:image" content="https://pikart.ir/images/og/og-default.png" />
+    <meta property="og:image:secure_url" content="https://pikart.ir/images/og/og-default.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="پی‌کارت — مارکت‌پلیس سرویس‌های دیجیتال" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@pikart_ir" />
+    <meta name="twitter:title" content="پی‌کارت | مارکت‌پلیس سرویس‌های دیجیتال" />
+    <meta
+      name="twitter:description"
+      content="خرید اشتراک‌های دیجیتال، اکانت‌های پرمیوم، گیفت‌کارت و سرویس‌های هوش مصنوعی با بهترین قیمت، تحویل آنی و ضمانت اصالت در پی‌کارت."
+    />
+    <meta name="twitter:image" content="https://pikart.ir/images/og/og-default.png" />
+    <meta name="twitter:image:alt" content="پی‌کارت — مارکت‌پلیس سرویس‌های دیجیتال" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link
+      rel="search"
+      type="application/opensearchdescription+xml"
+      title="پی‌کارت"
+      href="/opensearch.xml"
+    />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="پی‌کارت — وبلاگ"
+      href="/rss.xml"
+    />
+
+    <link rel="alternate" hreflang="fa-IR" href="https://pikart.ir/" />
+    <link rel="alternate" hreflang="x-default" href="https://pikart.ir/" />
+
+    <!-- Preload the marketplace catalogue in parallel with the JS bundle so
+         the React app can render as soon as both arrive. -->
+    <link rel="preload" as="fetch" type="application/json" href="/data/marketplace.json" crossorigin />
+
+    <!--
+      Self-hosted Vazirmatn (see src/index.css). We preload the two
+      weights used in the initial paint (regular body 400 + bold 700)
+      so the browser starts fetching them in parallel with the JS
+      bundle and CSS, eliminating the FOUT/CLS pop on first render.
+    -->
+    <link rel="preload" href="/fonts/vazirmatn-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/vazirmatn-700.woff2" as="font" type="font/woff2" crossorigin />
+
+    <!--
+      GitHub Pages SPA bootstrap. If we were redirected from `404.html`
+      with the original path encoded in `?p=/foo&q=bar`, restore the URL
+      before React mounts so the router sees the right route. Safe no-op
+      on hosts that already rewrite to index.html (Vercel/Netlify/etc.).
+    -->
+    <script>
+      ;(function () {
+        var l = window.location
+        if (l.search.indexOf('p=/') === 0 || l.search.indexOf('?p=/') === 0 || /[?&]p=\//.test(l.search)) {
+          var q = l.search.slice(1)
+          var parts = q.split('&')
+          var pathPart = ''
+          var rest = []
+          for (var i = 0; i < parts.length; i++) {
+            if (parts[i].indexOf('p=') === 0) {
+              pathPart = decodeURIComponent(parts[i].slice(2)).replace(/~and~/g, '&')
+            } else if (parts[i].indexOf('q=') === 0) {
+              var qp = decodeURIComponent(parts[i].slice(2)).replace(/~and~/g, '&')
+              rest.push(qp)
+            } else {
+              rest.push(parts[i])
+            }
+          }
+          if (pathPart) {
+            var search = rest.length ? '?' + rest.join('&') : ''
+            window.history.replaceState({}, '', pathPart + search + l.hash)
+          }
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <!--ssr-outlet-start-->
+    <div id="root">
+      <div
+        id="initial-loading"
+        style="
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          font-family: 'Vazirmatn', system-ui, sans-serif;
+          background: #0b0c10;
+          color: #c4c5d0;
+        "
+      >
+        <div style="text-align: center;">
+          <div
+            style="
+              width: 40px;
+              height: 40px;
+              margin: 0 auto 12px;
+              border: 3px solid #2a2b35;
+              border-top-color: #d4a853;
+              border-radius: 50%;
+              animation: pikart-spin 0.9s linear infinite;
+            "
+          ></div>
+          <p style="font-size: 13px; color: #8a8b96;">در حال بارگذاری پی‌کارت…</p>
+        </div>
+      </div>
+    </div>
+    <!--ssr-outlet-end-->
+    <style>
+      @keyframes pikart-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+    </style>
+    <noscript>
+      <!-- This block is rendered ONLY when the visitor has JavaScript
+           disabled. We deliberately use <p>/<strong> here instead of
+           <h1> so the page never has two <h1> elements in the DOM (the
+           SSR-rendered React tree above already provides one). -->
+      <div style="font-family: 'Vazirmatn', system-ui, sans-serif; padding: 24px; text-align: center; color: #c4c5d0; background: #0b0c10;">
+        <p style="font-size: 24px; font-weight: 900; color: #ffffff; margin: 0 0 8px;">
+          پی‌کارت — مارکت‌پلیس سرویس‌های دیجیتال
+        </p>
+        <p>برای استفاده از پی‌کارت، لطفاً جاوااسکریپت مرورگر خود را فعال کنید.</p>
+        <p>
+          <a href="/sitemap.xml" style="color: #d4a853;">نقشه سایت</a> ·
+          <a href="/categories" style="color: #d4a853;">دسته‌بندی‌ها</a>
+        </p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
