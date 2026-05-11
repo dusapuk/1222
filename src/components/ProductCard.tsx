@@ -5,6 +5,7 @@ import { getDiscountPct } from '../lib/data'
 import { formatToman } from '../lib/format'
 import { AppLink } from './AppLink'
 import { liveOrderLabelFa } from '../lib/liveCounter'
+import { useFavorites } from '../hooks/useFavorites'
 
 const FALLBACK = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%231a1b26"/><circle cx="32" cy="26" r="9" fill="%23505162"/><path d="M14 56c0-9.94 8.06-18 18-18s18 8.06 18 18" fill="%23505162"/></svg>'
 
@@ -22,6 +23,8 @@ export function ProductCard({ service: s, onNavigate, variant = 'default' }: Pro
   // Surfaces social-proof activity on every card without needing a
   // realtime backend. Skipped for out-of-stock services.
   const liveLabel = liveOrderLabelFa(s)
+  const { isFavorite, toggleFavorite } = useFavorites()
+  const fav = isFavorite(s.slug)
 
   // Inner action buttons (favourite / quick view / cart) must not bubble
   // up to the outer link. Stop propagation on the wrapping anchor click
@@ -29,6 +32,16 @@ export function ProductCard({ service: s, onNavigate, variant = 'default' }: Pro
   function stop(e: MouseEvent): void {
     e.stopPropagation()
     e.preventDefault()
+  }
+
+  function onFavClick(e: MouseEvent): void {
+    stop(e)
+    toggleFavorite(s.slug)
+  }
+
+  function onQuickView(e: MouseEvent): void {
+    stop(e)
+    onNavigate(href)
   }
 
   return (
@@ -83,18 +96,21 @@ export function ProductCard({ service: s, onNavigate, variant = 'default' }: Pro
           </div>
         )}
 
-        <div className="absolute bottom-3 left-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute bottom-3 left-3 flex gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
           <button
             type="button"
-            onClick={stop}
-            className="w-8 h-8 bg-[#0b0c10]/80 backdrop-blur-sm rounded-lg flex items-center justify-center text-[#8a8b96] hover:text-[#e63946] transition-colors"
-            aria-label="افزودن به علاقه‌مندی"
+            onClick={onFavClick}
+            aria-pressed={fav}
+            className={`w-8 h-8 bg-[#0b0c10]/80 backdrop-blur-sm rounded-lg flex items-center justify-center transition-colors ${
+              fav ? 'text-[#e63946]' : 'text-[#8a8b96] hover:text-[#e63946]'
+            }`}
+            aria-label={fav ? 'حذف از علاقه‌مندی' : 'افزودن به علاقه‌مندی'}
           >
-            <Heart size={14} />
+            <Heart size={14} fill={fav ? 'currentColor' : 'none'} />
           </button>
           <button
             type="button"
-            onClick={stop}
+            onClick={onQuickView}
             className="w-8 h-8 bg-[#0b0c10]/80 backdrop-blur-sm rounded-lg flex items-center justify-center text-[#8a8b96] hover:text-white transition-colors"
             aria-label="نمایش سریع"
           >

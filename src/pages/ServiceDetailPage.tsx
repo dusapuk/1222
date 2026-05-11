@@ -40,10 +40,12 @@ import { AppLink } from '../components/AppLink'
 import { formatToman, toPersianDigits } from '../lib/format'
 import { iconFor, colorForCategory } from '../lib/icons'
 import { useSEO } from '../hooks/useSEO'
+import { useFavorites } from '../hooks/useFavorites'
 import { seoForService, seoForServiceNotFound } from '../lib/seoConfig'
 import { getRelatedBlogPostsForService, type BlogPost } from '../lib/blog'
 import { getServiceRegions } from '../lib/regions'
 import { liveOrderLabelFa } from '../lib/liveCounter'
+import { share } from '../lib/share'
 
 const FALLBACK = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%231a1b26"/><circle cx="32" cy="26" r="9" fill="%23505162"/><path d="M14 56c0-9.94 8.06-18 18-18s18 8.06 18 18" fill="%23505162"/></svg>'
 
@@ -55,6 +57,23 @@ export type ServiceDetailPageProps = {
 export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) {
   const service = getServiceBySlug(slug)
   const category = service ? getCategoryById(service.categoryId) : undefined
+
+  const { isFavorite, toggleFavorite } = useFavorites()
+  const fav = service ? isFavorite(service.slug) : false
+  const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'shared' | 'failed'>('idle')
+
+  async function onShare(): Promise<void> {
+    if (!service || typeof window === 'undefined') return
+    const url = `${window.location.origin}/s/${service.slug}`
+    const result = await share({
+      title: service.titleFa,
+      text: service.shortDescriptionFa ?? service.titleFa,
+      url,
+    })
+    if (result === 'cancelled') return
+    setShareStatus(result === 'failed' ? 'failed' : result)
+    window.setTimeout(() => setShareStatus('idle'), 2200)
+  }
 
   const servicePlans: Plan[] = useMemo(
     () => (service ? getPlansByService(service.id) : []),
@@ -304,7 +323,7 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
 
         {/* purchase card */}
         <aside className="lg:col-span-5">
-          <div className="lg:sticky lg:top-20 bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-6">
+          <div className="lg:sticky lg:top-[124px] bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-6">
             <div className="flex items-start gap-3 mb-4">
               <div className="w-14 h-14 rounded-xl bg-[#0e0f15] border border-[#1e1f2a] flex items-center justify-center shrink-0 overflow-hidden p-2">
                 <img
@@ -439,17 +458,31 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                className="flex items-center justify-center gap-2 bg-[#0e0f15] border border-[#1e1f2a] hover:border-[#d4a853]/40 text-[#9a9baa] hover:text-white text-xs h-10 rounded-xl transition-all"
+                onClick={() => toggleFavorite(service.slug)}
+                aria-pressed={fav}
+                className={`flex items-center justify-center gap-2 bg-[#0e0f15] border text-xs h-10 rounded-xl transition-all ${
+                  fav
+                    ? 'border-[#e63946]/60 text-[#e63946]'
+                    : 'border-[#1e1f2a] text-[#9a9baa] hover:border-[#d4a853]/40 hover:text-white'
+                }`}
               >
-                <Heart size={14} />
-                علاقه‌مندی
+                <Heart size={14} fill={fav ? 'currentColor' : 'none'} />
+                {fav ? 'در علاقه‌مندی‌ها' : 'علاقه‌مندی'}
               </button>
               <button
                 type="button"
+                onClick={onShare}
+                aria-live="polite"
                 className="flex items-center justify-center gap-2 bg-[#0e0f15] border border-[#1e1f2a] hover:border-[#d4a853]/40 text-[#9a9baa] hover:text-white text-xs h-10 rounded-xl transition-all"
               >
                 <Share2 size={14} />
-                اشتراک گذاری
+                {shareStatus === 'copied'
+                  ? 'لینک کپی شد'
+                  : shareStatus === 'shared'
+                    ? 'به اشتراک گذاشته شد'
+                    : shareStatus === 'failed'
+                      ? 'خطا در اشتراک‌گذاری'
+                      : 'اشتراک گذاری'}
               </button>
             </div>
           </div>
