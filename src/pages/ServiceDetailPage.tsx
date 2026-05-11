@@ -261,31 +261,6 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
               </p>
             )}
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
-              {[
-                { icon: Zap, label: 'تحویل سریع', desc: service.deliveryTimeFa ?? '۱۵ دقیقه تا چند ساعت', color: '#d4a853' },
-                { icon: Shield, label: 'ضمانت اصالت', desc: 'فعال‌سازی روی اکانت اصلی', color: '#2ec4b6' },
-                { icon: Award, label: 'پشتیبانی فارسی', desc: 'پاسخگویی ۲۴ ساعته', color: '#9b5de5' },
-                { icon: CheckCircle2, label: `${toPersianDigits(service.planCount)} پلن`, desc: 'بهترین قیمت', color: '#06d6a0' },
-              ].map((it) => {
-                const I = it.icon
-                return (
-                  <div
-                    key={it.label}
-                    className="bg-[#0e0f15] border border-[#1e1f2a] rounded-xl p-3"
-                  >
-                    <div
-                      className="w-9 h-9 rounded-lg flex items-center justify-center mb-2"
-                      style={{ background: `${it.color}15`, border: `1px solid ${it.color}33` }}
-                    >
-                      <I size={16} style={{ color: it.color }} />
-                    </div>
-                    <div className="text-xs font-bold text-white mb-1">{it.label}</div>
-                    <div className="text-[10px] text-[#6b6c78] leading-5">{it.desc}</div>
-                  </div>
-                )
-              })}
-            </div>
           </div>
 
           {/* Multi-region availability table — SEO roadmap #16.
@@ -325,7 +300,7 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
         <aside className="lg:col-span-5">
           <div className="lg:sticky lg:top-[124px] bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-6">
             <div className="flex items-start gap-3 mb-4">
-              <div className="w-14 h-14 rounded-xl bg-[#0e0f15] border border-[#1e1f2a] flex items-center justify-center shrink-0 overflow-hidden p-2">
+              <div className="w-16 h-16 rounded-xl bg-[#0e0f15] border border-[#1e1f2a] flex items-center justify-center shrink-0 overflow-hidden p-2">
                 <img
                   src={service.logoUrl ?? FALLBACK}
                   alt={`${service.titleFa} — لوگو`}
@@ -354,7 +329,7 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
                 )}
                 <p
                   aria-hidden="true"
-                  className="text-lg font-black text-white leading-tight line-clamp-2 m-0"
+                  className="text-xl font-black text-white leading-tight line-clamp-2 m-0"
                 >
                   خرید {service.titleFa}
                 </p>
@@ -450,11 +425,38 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
             <button
               type="button"
               disabled={!service.inStock}
-              className="w-full bg-[#d4a853] hover:bg-[#c49a48] disabled:bg-[#1e1f2a] disabled:text-[#6b6c78] disabled:cursor-not-allowed text-[#0b0c10] font-bold h-12 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 mb-2"
+              className="w-full bg-[#d4a853] hover:bg-[#c49a48] disabled:bg-[#1e1f2a] disabled:text-[#6b6c78] disabled:cursor-not-allowed text-[#0b0c10] font-bold h-12 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 mb-3"
             >
               <ShoppingCart size={16} />
               {service.inStock ? 'مشاهده پلن‌ها و خرید' : 'ناموجود'}
             </button>
+
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              {[
+                { icon: Zap, label: 'تحویل سریع', desc: service.deliveryTimeFa ?? '۱۵ دقیقه تا چند ساعت', color: '#d4a853' },
+                { icon: Shield, label: 'ضمانت اصالت', desc: 'فعال‌سازی روی اکانت اصلی', color: '#2ec4b6' },
+                { icon: Award, label: 'پشتیبانی فارسی', desc: 'پاسخگویی ۲۴ ساعته', color: '#9b5de5' },
+                { icon: CheckCircle2, label: `${toPersianDigits(service.planCount)} پلن`, desc: 'بهترین قیمت', color: '#06d6a0' },
+              ].map((it) => {
+                const I = it.icon
+                return (
+                  <div
+                    key={it.label}
+                    className="bg-[#0e0f15] border border-[#1e1f2a] rounded-xl p-3"
+                  >
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5"
+                      style={{ background: `${it.color}15`, border: `1px solid ${it.color}33` }}
+                    >
+                      <I size={14} style={{ color: it.color }} />
+                    </div>
+                    <div className="text-[11px] font-bold text-white mb-0.5 leading-tight">{it.label}</div>
+                    <div className="text-[10px] text-[#6b6c78] leading-4">{it.desc}</div>
+                  </div>
+                )
+              })}
+            </div>
+
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
