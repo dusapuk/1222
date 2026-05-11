@@ -103,18 +103,22 @@ export function useRoute(initial?: { path?: string; params?: Record<string, stri
     (path: string, params?: Record<string, string | number | null | undefined>) => {
       if (typeof window === 'undefined') return
       const dest = buildHref(path, params)
-      const current = window.location.pathname + window.location.search
+      const currentPath = window.location.pathname
+      const current = currentPath + window.location.search
+      // Capture pathChanged BEFORE pushState — once history.pushState runs,
+      // window.location.pathname is already the new path, so any later
+      // `path === window.location.pathname` check would always be true and
+      // scroll-to-top would silently never run.
+      const pathChanged = normalisePath(path) !== normalisePath(currentPath)
       if (dest !== current) {
         window.history.pushState({}, '', dest)
         window.dispatchEvent(new Event('pikart:navigate'))
       }
-      // ensure scroll to top on path change
-      const samePath = path === window.location.pathname || path === route.path
-      if (!samePath) {
+      if (pathChanged) {
         window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
       }
     },
-    [route.path],
+    [],
   )
 
   const setParams = useCallback(
