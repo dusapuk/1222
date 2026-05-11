@@ -62,6 +62,13 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
   const fav = service ? isFavorite(service.slug) : false
   const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'shared' | 'failed'>('idle')
 
+  function onViewPlans(): void {
+    if (typeof document === 'undefined') return
+    const target = document.getElementById('plans')
+    if (!target) return
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   async function onShare(): Promise<void> {
     if (!service || typeof window === 'undefined') return
     const url = `${window.location.origin}/s/${service.slug}`
@@ -424,7 +431,8 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
 
             <button
               type="button"
-              disabled={!service.inStock}
+              onClick={onViewPlans}
+              disabled={!service.inStock || servicePlans.length === 0}
               className="w-full bg-[#d4a853] hover:bg-[#c49a48] disabled:bg-[#1e1f2a] disabled:text-[#6b6c78] disabled:cursor-not-allowed text-[#0b0c10] font-bold h-12 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 mb-3"
             >
               <ShoppingCart size={16} />
@@ -493,7 +501,7 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
 
       {/* plans */}
       {servicePlans.length > 0 && (
-        <section className="mt-8">
+        <section id="plans" className="mt-8 scroll-mt-[124px]">
           <div className="flex items-center gap-3 mb-5">
             <span className="w-1 h-6 bg-[#d4a853] rounded-full" />
             <h2 className="text-lg font-black text-white">پلن‌ها و قیمت‌ها</h2>
