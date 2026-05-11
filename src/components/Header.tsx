@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
   ShoppingCart,
-  User,
   Menu,
   X,
   Phone,
@@ -122,13 +121,6 @@ export function Header({ onNavigate }: HeaderProps) {
                   size={20}
                   className="text-[#8a8b96] group-hover:text-white transition-colors"
                 />
-              </button>
-              <button
-                type="button"
-                className="hidden sm:flex items-center gap-2 bg-[#16171f] border border-[#252630] rounded-xl h-10 px-4 text-sm text-[#c4c5d0] hover:border-[#d4a853] hover:text-white transition-all"
-              >
-                <User size={16} />
-                ورود
               </button>
               <button
                 type="button"
@@ -258,13 +250,6 @@ export function Header({ onNavigate }: HeaderProps) {
                 })}
               </div>
             )}
-            <button
-              type="button"
-              className="w-full flex items-center gap-2 bg-[#16171f] border border-[#252630] rounded-xl h-11 px-4 text-sm text-white mt-3"
-            >
-              <User size={16} />
-              ورود / ثبت‌نام
-            </button>
           </nav>
         </div>
       )}

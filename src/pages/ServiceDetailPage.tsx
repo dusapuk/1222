@@ -40,10 +40,12 @@ import { AppLink } from '../components/AppLink'
 import { formatToman, toPersianDigits } from '../lib/format'
 import { iconFor, colorForCategory } from '../lib/icons'
 import { useSEO } from '../hooks/useSEO'
+import { useFavorites } from '../hooks/useFavorites'
 import { seoForService, seoForServiceNotFound } from '../lib/seoConfig'
 import { getRelatedBlogPostsForService, type BlogPost } from '../lib/blog'
 import { getServiceRegions } from '../lib/regions'
 import { liveOrderLabelFa } from '../lib/liveCounter'
+import { share } from '../lib/share'
 
 const FALLBACK = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="%231a1b26"/><circle cx="32" cy="26" r="9" fill="%23505162"/><path d="M14 56c0-9.94 8.06-18 18-18s18 8.06 18 18" fill="%23505162"/></svg>'
 
@@ -55,6 +57,30 @@ export type ServiceDetailPageProps = {
 export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) {
   const service = getServiceBySlug(slug)
   const category = service ? getCategoryById(service.categoryId) : undefined
+
+  const { isFavorite, toggleFavorite } = useFavorites()
+  const fav = service ? isFavorite(service.slug) : false
+  const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'shared' | 'failed'>('idle')
+
+  function onViewPlans(): void {
+    if (typeof document === 'undefined') return
+    const target = document.getElementById('plans')
+    if (!target) return
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  async function onShare(): Promise<void> {
+    if (!service || typeof window === 'undefined') return
+    const url = `${window.location.origin}/s/${service.slug}`
+    const result = await share({
+      title: service.titleFa,
+      text: service.shortDescriptionFa ?? service.titleFa,
+      url,
+    })
+    if (result === 'cancelled') return
+    setShareStatus(result === 'failed' ? 'failed' : result)
+    window.setTimeout(() => setShareStatus('idle'), 2200)
+  }
 
   const servicePlans: Plan[] = useMemo(
     () => (service ? getPlansByService(service.id) : []),
@@ -242,31 +268,6 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
               </p>
             )}
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
-              {[
-                { icon: Zap, label: 'تحویل سریع', desc: service.deliveryTimeFa ?? '۱۵ دقیقه تا چند ساعت', color: '#d4a853' },
-                { icon: Shield, label: 'ضمانت اصالت', desc: 'فعال‌سازی روی اکانت اصلی', color: '#2ec4b6' },
-                { icon: Award, label: 'پشتیبانی فارسی', desc: 'پاسخگویی ۲۴ ساعته', color: '#9b5de5' },
-                { icon: CheckCircle2, label: `${toPersianDigits(service.planCount)} پلن`, desc: 'بهترین قیمت', color: '#06d6a0' },
-              ].map((it) => {
-                const I = it.icon
-                return (
-                  <div
-                    key={it.label}
-                    className="bg-[#0e0f15] border border-[#1e1f2a] rounded-xl p-3"
-                  >
-                    <div
-                      className="w-9 h-9 rounded-lg flex items-center justify-center mb-2"
-                      style={{ background: `${it.color}15`, border: `1px solid ${it.color}33` }}
-                    >
-                      <I size={16} style={{ color: it.color }} />
-                    </div>
-                    <div className="text-xs font-bold text-white mb-1">{it.label}</div>
-                    <div className="text-[10px] text-[#6b6c78] leading-5">{it.desc}</div>
-                  </div>
-                )
-              })}
-            </div>
           </div>
 
           {/* Multi-region availability table — SEO roadmap #16.
@@ -304,9 +305,9 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
 
         {/* purchase card */}
         <aside className="lg:col-span-5">
-          <div className="lg:sticky lg:top-20 bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-6">
+          <div className="lg:sticky lg:top-[124px] bg-[#13141a] border border-[#1e1f2a] rounded-2xl p-5 md:p-6">
             <div className="flex items-start gap-3 mb-4">
-              <div className="w-14 h-14 rounded-xl bg-[#0e0f15] border border-[#1e1f2a] flex items-center justify-center shrink-0 overflow-hidden p-2">
+              <div className="w-16 h-16 rounded-xl bg-[#0e0f15] border border-[#1e1f2a] flex items-center justify-center shrink-0 overflow-hidden p-2">
                 <img
                   src={service.logoUrl ?? FALLBACK}
                   alt={`${service.titleFa} — لوگو`}
@@ -335,7 +336,7 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
                 )}
                 <p
                   aria-hidden="true"
-                  className="text-lg font-black text-white leading-tight line-clamp-2 m-0"
+                  className="text-xl font-black text-white leading-tight line-clamp-2 m-0"
                 >
                   خرید {service.titleFa}
                 </p>
@@ -430,26 +431,68 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
 
             <button
               type="button"
-              disabled={!service.inStock}
-              className="w-full bg-[#d4a853] hover:bg-[#c49a48] disabled:bg-[#1e1f2a] disabled:text-[#6b6c78] disabled:cursor-not-allowed text-[#0b0c10] font-bold h-12 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 mb-2"
+              onClick={onViewPlans}
+              disabled={!service.inStock || servicePlans.length === 0}
+              className="w-full bg-[#d4a853] hover:bg-[#c49a48] disabled:bg-[#1e1f2a] disabled:text-[#6b6c78] disabled:cursor-not-allowed text-[#0b0c10] font-bold h-12 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 mb-3"
             >
               <ShoppingCart size={16} />
               {service.inStock ? 'مشاهده پلن‌ها و خرید' : 'ناموجود'}
             </button>
+
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              {[
+                { icon: Zap, label: 'تحویل سریع', desc: service.deliveryTimeFa ?? '۱۵ دقیقه تا چند ساعت', color: '#d4a853' },
+                { icon: Shield, label: 'ضمانت اصالت', desc: 'فعال‌سازی روی اکانت اصلی', color: '#2ec4b6' },
+                { icon: Award, label: 'پشتیبانی فارسی', desc: 'پاسخگویی ۲۴ ساعته', color: '#9b5de5' },
+                { icon: CheckCircle2, label: `${toPersianDigits(service.planCount)} پلن`, desc: 'بهترین قیمت', color: '#06d6a0' },
+              ].map((it) => {
+                const I = it.icon
+                return (
+                  <div
+                    key={it.label}
+                    className="bg-[#0e0f15] border border-[#1e1f2a] rounded-xl p-3"
+                  >
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5"
+                      style={{ background: `${it.color}15`, border: `1px solid ${it.color}33` }}
+                    >
+                      <I size={14} style={{ color: it.color }} />
+                    </div>
+                    <div className="text-[11px] font-bold text-white mb-0.5 leading-tight">{it.label}</div>
+                    <div className="text-[10px] text-[#6b6c78] leading-4">{it.desc}</div>
+                  </div>
+                )
+              })}
+            </div>
+
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                className="flex items-center justify-center gap-2 bg-[#0e0f15] border border-[#1e1f2a] hover:border-[#d4a853]/40 text-[#9a9baa] hover:text-white text-xs h-10 rounded-xl transition-all"
+                onClick={() => toggleFavorite(service.slug)}
+                aria-pressed={fav}
+                className={`flex items-center justify-center gap-2 bg-[#0e0f15] border text-xs h-10 rounded-xl transition-all ${
+                  fav
+                    ? 'border-[#e63946]/60 text-[#e63946]'
+                    : 'border-[#1e1f2a] text-[#9a9baa] hover:border-[#d4a853]/40 hover:text-white'
+                }`}
               >
-                <Heart size={14} />
-                علاقه‌مندی
+                <Heart size={14} fill={fav ? 'currentColor' : 'none'} />
+                {fav ? 'در علاقه‌مندی‌ها' : 'علاقه‌مندی'}
               </button>
               <button
                 type="button"
+                onClick={onShare}
+                aria-live="polite"
                 className="flex items-center justify-center gap-2 bg-[#0e0f15] border border-[#1e1f2a] hover:border-[#d4a853]/40 text-[#9a9baa] hover:text-white text-xs h-10 rounded-xl transition-all"
               >
                 <Share2 size={14} />
-                اشتراک گذاری
+                {shareStatus === 'copied'
+                  ? 'لینک کپی شد'
+                  : shareStatus === 'shared'
+                    ? 'به اشتراک گذاشته شد'
+                    : shareStatus === 'failed'
+                      ? 'خطا در اشتراک‌گذاری'
+                      : 'اشتراک گذاری'}
               </button>
             </div>
           </div>
@@ -458,7 +501,7 @@ export function ServiceDetailPage({ slug, onNavigate }: ServiceDetailPageProps) 
 
       {/* plans */}
       {servicePlans.length > 0 && (
-        <section className="mt-8">
+        <section id="plans" className="mt-8 scroll-mt-[124px]">
           <div className="flex items-center gap-3 mb-5">
             <span className="w-1 h-6 bg-[#d4a853] rounded-full" />
             <h2 className="text-lg font-black text-white">پلن‌ها و قیمت‌ها</h2>
